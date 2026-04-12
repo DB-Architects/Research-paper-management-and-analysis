@@ -1,0 +1,14 @@
+# Ignore user-uploaded PDFs
+static/uploads/papers/*
+
+# Keep the folder structure but ignore the files
+!static/uploads/papers/.gitkeep
+
+# Ignore python cache and environments
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Ignore the large filtered dataset file
+dblp_filtered.jsonl

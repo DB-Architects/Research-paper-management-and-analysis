@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login — Nexus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy:#0a0f1e; --card:#0f1c35; --border:#1a2d50;
+    --teal:#00d4b4; --teal2:#00b89a; --teal-dim:#00d4b420;
+    --teal-glow:0 0 40px #00d4b430;
+    --text:#e8eef8; --muted:#6b82a8; --muted2:#3d5278;
+    --error:#ff6b6b;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body {
+    background:var(--navy); color:var(--text);
+    font-family:'DM Sans',sans-serif;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--border) 1px,transparent 1px),
+      linear-gradient(90deg,var(--border) 1px,transparent 1px);
+    background-size:60px 60px; opacity:0.15;
+    pointer-events:none; z-index:0;
+  }
+  body::after {
+    content:''; position:fixed;
+    top:-200px; left:50%; transform:translateX(-50%);
+    width:600px; height:500px;
+    background:radial-gradient(ellipse,#00d4b412 0%,transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  nav {
+    position:relative; z-index:10;
+    display:flex; align-items:center;
+    padding:0 40px; height:64px;
+    border-bottom:1px solid var(--border);
+  }
+  .nav-logo {
+    font-family:'Syne',sans-serif; font-weight:800;
+    font-size:1.2rem; color:var(--teal); text-decoration:none;
+  }
+  .nav-logo span{color:var(--text);}
+
+  .center {
+    flex:1; display:flex; align-items:center;
+    justify-content:center; padding:40px 24px;
+    position:relative; z-index:1;
+  }
+
+  .auth-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:20px; padding:48px;
+    width:100%; max-width:420px;
+    animation:fadeUp 0.4s ease both;
+    position:relative; overflow:hidden;
+  }
+  .auth-card::before {
+    content:''; position:absolute;
+    top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,var(--teal),var(--teal2),transparent);
+  }
+
+  .auth-title {
+    font-family:'Syne',sans-serif;
+    font-size:1.8rem; font-weight:800;
+    letter-spacing:-0.5px; margin-bottom:6px;
+  }
+  .auth-sub {
+    font-size:0.88rem; color:var(--muted);
+    margin-bottom:36px; font-weight:300;
+  }
+  .auth-sub a { color:var(--teal); text-decoration:none; }
+  .auth-sub a:hover { text-decoration:underline; }
+
+  .field { margin-bottom:20px; }
+  .field label {
+    display:block; font-size:0.78rem;
+    font-weight:600; letter-spacing:0.5px;
+    color:var(--muted); margin-bottom:8px;
+    text-transform:uppercase;
+  }
+  .field input {
+    width:100%; background:var(--navy);
+    border:1px solid var(--border); border-radius:10px;
+    padding:13px 16px; font-size:0.92rem;
+    color:var(--text); font-family:'DM Sans',sans-serif;
+    outline:none; transition:border-color 0.2s,box-shadow 0.2s;
+  }
+  .field input:focus {
+    border-color:var(--teal);
+    box-shadow:var(--teal-glow);
+  }
+  .field input::placeholder{color:var(--muted2);}
+
+  .error-msg {
+    background:#ff6b6b18; border:1px solid #ff6b6b40;
+    border-radius:8px; padding:10px 14px;
+    font-size:0.83rem; color:var(--error);
+    margin-bottom:20px; display:none;
+  }
+
+  .submit-btn {
+    width:100%; background:var(--teal);
+    border:none; border-radius:10px;
+    padding:14px; font-family:'Syne',sans-serif;
+    font-weight:700; font-size:0.95rem;
+    color:var(--navy); cursor:pointer;
+    transition:background 0.2s, transform 0.1s;
+    margin-top:8px;
+  }
+  .submit-btn:hover{background:var(--teal2);}
+  .submit-btn:active{transform:scale(0.98);}
+
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(20px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/">Nexus<span>.</span></a>
+</nav>
+
+<div class="center">
+  <div class="auth-card">
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-sub">
+      Don't have an account? <a href="/signup">Sign up free</a>
+    </p>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="your_username" autocomplete="off"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••"/>
+    </div>
+
+    <button class="submit-btn" onclick="doLogin()">Login →</button>
+  </div>
+</div>
+
+<script>
+async function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('error-msg');
+
+  if (!username || !password) {
+    errEl.textContent = 'Please fill in all fields.';
+    errEl.style.display = 'block'; return;
+  }
+
+  const res = await fetch('/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    window.location.href = '/profile';
+  } else {
+    errEl.textContent = data.error || 'Invalid credentials.';
+    errEl.style.display = 'block';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>

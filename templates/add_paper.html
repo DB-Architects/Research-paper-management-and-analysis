@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Publish Research — Nexus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy:#0a0f1e; --card:#0f1c35; --border:#1a2d50;
+    --teal:#00d4b4; --teal2:#00b89a; --teal-dim:#00d4b420;
+    --teal-glow:0 0 40px #00d4b430;
+    --text:#e8eef8; --muted:#6b82a8; --muted2:#3d5278;
+    --error:#ff6b6b;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body {
+    background:var(--navy); color:var(--text);
+    font-family:'DM Sans',sans-serif; min-height:100vh;
+    display:flex; flex-direction:column;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--border) 1px,transparent 1px),
+      linear-gradient(90deg,var(--border) 1px,transparent 1px);
+    background-size:60px 60px; opacity:0.15;
+    pointer-events:none; z-index:0;
+  }
+  body::after {
+    content:''; position:fixed;
+    top:-200px; left:50%; transform:translateX(-50%);
+    width:600px; height:500px;
+    background:radial-gradient(ellipse,#00d4b412 0%,transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  nav {
+    position:relative; z-index:10;
+    display:flex; align-items:center; justify-content: space-between;
+    padding:0 40px; height:64px;
+    border-bottom:1px solid var(--border);
+  }
+  .nav-logo {
+    font-family:'Syne',sans-serif; font-weight:800;
+    font-size:1.2rem; color:var(--teal); text-decoration:none;
+  }
+  .nav-logo span{color:var(--text);}
+  
+  .nav-links { display: flex; gap: 24px; align-items: center; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.88rem; font-weight: 500; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .center {
+    flex:1; display:flex; align-items:center;
+    justify-content:center; padding:40px 24px;
+    position:relative; z-index:1;
+  }
+
+  .auth-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:20px; padding:48px;
+    width:100%; max-width:550px;
+    animation:fadeUp 0.4s ease both;
+    position:relative; overflow:hidden;
+  }
+  .auth-card::before {
+    content:''; position:absolute;
+    top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,var(--teal),var(--teal2),transparent);
+  }
+
+  .auth-title {
+    font-family:'Syne',sans-serif;
+    font-size:1.8rem; font-weight:800;
+    letter-spacing:-0.5px; margin-bottom:6px;
+  }
+  .auth-sub {
+    font-size:0.88rem; color:var(--muted);
+    margin-bottom:36px; font-weight:300;
+  }
+
+  .field{margin-bottom:18px;}
+  .field label {
+    display:block; font-size:0.78rem;
+    font-weight:600; letter-spacing:0.5px;
+    color:var(--muted); margin-bottom:8px;
+    text-transform:uppercase;
+  }
+  .field input, .field textarea {
+    width:100%; background:var(--navy);
+    border:1px solid var(--border); border-radius:10px;
+    padding:13px 16px; font-size:0.92rem;
+    color:var(--text); font-family:'DM Sans',sans-serif;
+    outline:none; transition:border-color 0.2s,box-shadow 0.2s;
+  }
+  .field input:focus, .field textarea:focus {
+    border-color:var(--teal); box-shadow:var(--teal-glow);
+  }
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+  .error-msg {
+    background:#ff6b6b18; border:1px solid #ff6b6b40;
+    border-radius:8px; padding:10px 14px;
+    font-size:0.83rem; color:var(--error);
+    margin-bottom:20px; display:none;
+  }
+
+  .submit-btn {
+    width:100%; background:var(--teal);
+    border:none; border-radius:10px;
+    padding:14px; font-family:'Syne',sans-serif;
+    font-weight:700; font-size:0.95rem;
+    color:var(--navy); cursor:pointer;
+    transition:background 0.2s, transform 0.1s;
+    margin-top:8px;
+  }
+  .submit-btn:hover{background:var(--teal2);}
+  .submit-btn:active{transform:scale(0.98);}
+
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(20px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/">Nexus<span>.</span></a>
+  <div class="nav-links">
+    <a href="/profile">← Back to Profile</a>
+  </div>
+</nav>
+
+<div class="center">
+  <div class="auth-card">
+    <h1 class="auth-title">Publish Research</h1>
+    <p class="auth-sub">Upload a new paper to the Nexus database.</p>
+
+    <div class="error-msg" id="error-msg"></div>
+    <div class="error-msg" id="success-msg" style="background:#00d4b418; border-color:#00d4b440; color:var(--teal); display:none;"></div>
+
+    <div class="field">
+      <label>Paper Title</label>
+      <input type="text" id="title" placeholder="e.g. Attention Is All You Need" autocomplete="off"/>
+    </div>
+    
+    <div class="row">
+      <div class="field">
+        <label>Publication Year</label>
+        <input type="number" id="year" placeholder="2024" min="1950" max="2030"/>
+      </div>
+      <div class="field">
+        <label>Venue / Conference</label>
+        <input type="text" id="venue" placeholder="e.g. NeurIPS"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Abstract</label>
+      <textarea id="abstract" placeholder="Paste the full abstract here for the AI to analyze..." 
+                style="height: 120px; resize: vertical;"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Upload Full Paper (PDF) <span style="text-transform:none; color:var(--muted2); font-weight:400; letter-spacing:0;">optional</span></label>
+      <input type="file" id="pdf_file" accept=".pdf" style="padding: 10px 16px;"/>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitPaper()">Upload to Database →</button>
+  </div>
+</div>
+
+<script>
+async function submitPaper() {
+  const btn = document.getElementById('submit-btn');
+  const title = document.getElementById('title').value.trim();
+  const year = document.getElementById('year').value;
+  const venue = document.getElementById('venue').value.trim();
+  const abstract = document.getElementById('abstract').value.trim();
+  const pdfInput = document.getElementById('pdf_file');
+  const errEl = document.getElementById('error-msg');
+  const succEl = document.getElementById('success-msg');
+
+  errEl.style.display = 'none';
+  succEl.style.display = 'none';
+
+  if (!title || !year || !abstract) {
+    errEl.textContent = 'Title, Year, and Abstract are strictly required.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.textContent = "Processing & Embedding...";
+  btn.style.opacity = "0.7";
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('year', year);
+  formData.append('venue', venue);
+  formData.append('abstract', abstract);
+  
+  if (pdfInput.files.length > 0) {
+    formData.append('pdf_file', pdfInput.files[0]);
+  }
+
+  const res = await fetch('/add-paper', {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    succEl.textContent = 'Success! Paper added and embedded into the vector space.';
+    succEl.style.display = 'block';
+    setTimeout(() => { window.location.href = '/paper/' + data.paper_id; }, 1500);
+  } else {
+    errEl.textContent = data.error || 'Failed to upload paper.';
+    errEl.style.display = 'block';
+    btn.textContent = "Upload to Database →";
+    btn.style.opacity = "1";
+  }
+}
+</script>
+</body>
+</html>

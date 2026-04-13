@@ -17,6 +17,8 @@
     --teal2:   #00b89a;
     --teal-dim:#00d4b420;
     --teal-glow: 0 0 40px #00d4b430;
+    --amber:   #f59e0b;
+    --amber-dim:#f59e0b18;
     --text:    #e8eef8;
     --muted:   #6b82a8;
     --muted2:  #3d5278;
@@ -56,9 +58,8 @@
   .nav-logo {
     font-family: 'Inter', sans-serif;
     font-weight: 800; font-size: 1.2rem;
-    color: var(--teal); text-decoration: none; white-space: nowrap;
+    color: var(--text); text-decoration: none; white-space: nowrap;
   }
-  .nav-logo span { color: var(--text); }
 
   .nav-search {
     flex: 1; max-width: 480px;
@@ -90,10 +91,6 @@
     font-size: 0.88rem; font-weight: 500; transition: color 0.2s;
   }
   .nav-links a:hover { color: var(--text); }
-  .nav-btn {
-    background: var(--teal); color: var(--navy) !important;
-    padding: 7px 16px; border-radius: 8px; font-weight: 600 !important;
-  }
 
   /* ── LAYOUT ── */
   .page {
@@ -103,6 +100,9 @@
     display: grid;
     grid-template-columns: 1fr 300px;
     gap: 32px;
+  }
+  @media (max-width: 900px) {
+    .page { grid-template-columns: 1fr; gap: 24px; }
   }
 
   /* ── MAIN CONTENT ── */
@@ -162,10 +162,7 @@
     text-decoration: none;
     transition: all 0.15s;
   }
-  .author-tag:hover {
-    border-color: var(--teal);
-    color: var(--teal);
-  }
+  .author-tag:hover { border-color: var(--teal); color: var(--teal); }
 
   .paper-stats {
     display: flex; gap: 24px; flex-wrap: wrap;
@@ -181,6 +178,14 @@
   }
   .stat-item svg { width: 15px; height: 15px; color: var(--teal); }
   .stat-item strong { color: var(--text); font-family: 'Inter', sans-serif; }
+  .trust-badge {
+    background: var(--amber-dim);
+    color: var(--amber);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
 
   .paper-actions {
     display: flex; gap: 12px; flex-wrap: wrap;
@@ -196,196 +201,62 @@
   }
   .btn svg { width: 15px; height: 15px; }
 
-  .btn-primary {
-    background: var(--teal); color: var(--navy);
-  }
+  .btn-primary { background: var(--teal); color: var(--navy); }
   .btn-primary:hover { background: var(--teal2); }
 
-  .btn-outline {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
   .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
 
-  .btn-bookmark {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
-  .btn-bookmark.bookmarked {
-    background: var(--teal-dim);
-    border-color: #00d4b440;
-    color: var(--teal);
-  }
+  .btn-bookmark { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-bookmark.bookmarked { background: var(--teal-dim); border-color: #00d4b440; color: var(--teal); }
   .btn-bookmark:hover { border-color: var(--teal); color: var(--teal); }
 
+  /* ── RATING UI ── */
+  .rating-box {
+    background: var(--navy3); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-top: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .rating-select {
+    background: var(--navy); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; outline: none;
+  }
+  .rating-select:focus { border-color: var(--teal); }
+  
   /* ── ABSTRACT ── */
   .section-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px;
-    margin-bottom: 24px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; margin-bottom: 24px;
     animation: fadeUp 0.4s 0.1s ease both;
   }
-
   .section-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--teal);
-    margin-bottom: 14px;
+    font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px;
   }
-
-  .abstract-text {
-    font-size: 0.93rem;
-    line-height: 1.8;
-    color: #b8c8e0;
-    font-weight: 300;
-  }
-
-  /* ── CITATION TABS ── */
-  .tabs {
-    display: flex; gap: 4px;
-    background: var(--navy3);
-    border-radius: 10px;
-    padding: 4px;
-    margin-bottom: 20px;
-  }
-
-  .tab {
-    flex: 1; padding: 8px;
-    border-radius: 7px;
-    border: none; background: none;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem; font-weight: 500;
-    color: var(--muted); cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
-  }
-  .tab.active {
-    background: var(--card);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  .citation-item {
-    display: flex; align-items: flex-start;
-    gap: 14px; padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-    text-decoration: none; color: inherit;
-    transition: all 0.15s;
-  }
-  .citation-item:last-child { border-bottom: none; }
-  .citation-item:hover .citation-title { color: var(--teal); }
-
-  .citation-num {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    color: var(--muted2);
-    min-width: 24px;
-    margin-top: 2px;
-  }
-
-  .citation-title {
-    font-size: 0.88rem;
-    font-weight: 500;
-    line-height: 1.4;
-    margin-bottom: 4px;
-    transition: color 0.15s;
-  }
-
-  .citation-meta {
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
+  .abstract-text { font-size: 0.93rem; line-height: 1.8; color: #b8c8e0; font-weight: 300; }
 
   /* ── SIDEBAR ── */
   .sidebar { align-self: start; }
-
   .sidebar-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 22px;
-    margin-bottom: 20px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px; margin-bottom: 20px;
     animation: fadeUp 0.4s 0.15s ease both;
   }
-
   .sidebar-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
-
-  .similar-card {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    text-decoration: none;
-    display: block;
-    color: inherit;
-    transition: all 0.15s;
-  }
-  .similar-card:last-child { border-bottom: none; }
-  .similar-card:hover .similar-title { color: var(--teal); }
-
-  .similar-title {
-    font-size: 0.83rem;
-    font-weight: 600;
-    line-height: 1.4;
-    margin-bottom: 6px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    transition: color 0.15s;
-  }
-
-  .similar-meta {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    font-size: 0.72rem; color: var(--muted);
-  }
-
-  .similarity-bar {
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    margin-top: 6px;
-    overflow: hidden;
-  }
-
-  .similarity-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--teal), var(--teal2));
-    border-radius: 2px;
-    transition: width 0.6s ease;
+    font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
   }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--navy); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
 <body>
 
 <nav>
-  
+  <a class="nav-logo" href="/">Research Portal</a>
   <form class="nav-search" action="/search" method="GET">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -394,13 +265,15 @@
     <button type="submit">Go</button>
   </form>
   <div class="nav-links">
+    {% if session.role == 'admin' %}
+      <a href="/admin">Admin Board</a>
+    {% endif %}
     <a href="/analytics">Analytics</a>
     {% if session.get('username') %}
       <a href="/profile">{{ session.username }}</a>
       <a href="/logout">Logout</a>
     {% else %}
       <a href="/login">Login</a>
-      <a href="/signup" class="nav-btn">Sign Up</a>
     {% endif %}
   </div>
 </nav>
@@ -417,7 +290,7 @@
 
       <div class="paper-authors">
         {% for author in authors %}
-        <a class="author-tag" href="/author/{{ author.author_id }}">{{ author.name }}</a>
+        <span class="author-tag">{{ author.name }}</span>
         {% endfor %}
       </div>
 
@@ -436,125 +309,74 @@
           </svg>
           <strong>{{ paper.n_citations }}</strong> citations
         </div>
-        <div class="stat-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        
+        {% if paper.uploader_name %}
+        <div class="stat-item" style="margin-left: auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
+            <path d="M12 2l3 6 7 1-5 5 1 7-7-4-7 4 1-7-5-5 7-1z"/>
           </svg>
-          {{ paper.venue_type == 'J' and 'Journal' or 'Conference' }}
+          Uploaded by <strong>{{ paper.uploader_name }}</strong> 
+          <span class="trust-badge" id="tf-badge">{{ paper.trust_factor }}/10 TF</span>
         </div>
+        {% endif %}
       </div>
 
       <div class="paper-actions">
         {% if paper.pdf_path %}
         <a class="btn" href="{{ paper.pdf_path }}" target="_blank" style="background:var(--navy3); border:1px solid var(--border); color:var(--text);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          Read Full Paper
+          Read Full PDF
         </a>
         {% endif %}
-        <a class="btn btn-primary" href="{{ scholar_url }}" target="_blank">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          Google Scholar
-        </a>
-        <a class="btn btn-outline" href="{{ arxiv_url }}" target="_blank">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          arXiv
-        </a>
+        <a class="btn btn-primary" href="{{ scholar_url }}" target="_blank">Google Scholar</a>
+        <a class="btn btn-outline" href="{{ arxiv_url }}" target="_blank">arXiv</a>
+        
         {% if session.get('user_id') %}
-        <button class="btn btn-bookmark" id="bookmark-btn"
-                onclick="toggleBookmark({{ paper.paper_id }})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-          </svg>
+        <button class="btn btn-bookmark" id="bookmark-btn" onclick="toggleBookmark({{ paper.paper_id }})">
           Bookmark
         </button>
         {% endif %}
       </div>
+
+      {% if session.get('user_id') and paper.uploaded_by and paper.uploaded_by != session.user_id %}
+        {% if has_rated %}
+          <div class="rating-box" style="justify-content: center; background: var(--teal-dim); border-color: #00d4b430;">
+            <div style="color:var(--teal); font-weight:600; font-size:0.9rem;">✓ You have already rated this paper.</div>
+          </div>
+        {% else %}
+          <div class="rating-box" id="rating-box">
+            <div>
+              <strong style="display:block; font-size:0.9rem; margin-bottom:4px;">Rate this upload</strong>
+              <span style="font-size:0.75rem; color:var(--muted);">Your rating directly updates the uploader's Trust Factor.</span>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <select id="rating-val" class="rating-select">
+                <option value="">Select (1-10)</option>
+                <option value="1">1 - Terrible</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5 - Average</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9 - Great</option>
+                <option value="10">10 - Perfect</option>
+              </select>
+              <button class="btn btn-primary" onclick="submitRating({{ paper.paper_id }})">Submit</button>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
     </div>
 
     <div class="section-card">
       <div class="section-label">Abstract</div>
       <div class="abstract-text">{{ paper.abstract_text }}</div>
     </div>
-
-    <div class="section-card" style="animation-delay:0.2s">
-      <div class="section-label">Citation Network</div>
-      <div class="tabs">
-        <button class="tab active" onclick="switchTab('references')">
-          References ({{ references|length }})
-        </button>
-        <button class="tab" onclick="switchTab('cited_by')">
-          Cited By ({{ cited_by|length }})
-        </button>
-      </div>
-
-      <div class="tab-content active" id="tab-references">
-        {% if references %}
-          {% for i, ref in enumerate(references) %}
-          <a class="citation-item" href="/paper/{{ ref.paper_id }}">
-            <div class="citation-num">[{{ i+1 }}]</div>
-            <div>
-              <div class="citation-title">{{ ref.title }}</div>
-              <div class="citation-meta">{{ ref.n_citations }} citations</div>
-            </div>
-          </a>
-          {% endfor %}
-        {% else %}
-          <p style="color:var(--muted);font-size:0.85rem">No references found in dataset.</p>
-        {% endif %}
-      </div>
-
-      <div class="tab-content" id="tab-cited_by">
-        {% if cited_by %}
-          {% for i, citer in enumerate(cited_by) %}
-          <a class="citation-item" href="/paper/{{ citer.paper_id }}">
-            <div class="citation-num">[{{ i+1 }}]</div>
-            <div>
-              <div class="citation-title">{{ citer.title }}</div>
-              <div class="citation-meta">{{ citer.n_citations }} citations</div>
-            </div>
-          </a>
-          {% endfor %}
-        {% else %}
-          <p style="color:var(--muted);font-size:0.85rem">No citing papers found in dataset.</p>
-        {% endif %}
-      </div>
-    </div>
   </main>
 
   <aside class="sidebar">
-    {% if similar %}
     <div class="sidebar-card">
-      <div class="sidebar-title">Similar Papers</div>
-      {% for paper in similar %}
-      <a class="similar-card" href="/paper/{{ paper.paper_id }}">
-        <div class="similar-title">{{ paper.title }}</div>
-        <div class="similar-meta">
-          <span>{{ paper.n_citations }} citations</span>
-          <span>{{ "%.0f"|format((1 - paper.distance) * 100) }}% match</span>
-        </div>
-        <div class="similarity-bar">
-          <div class="similarity-fill"
-               style="width: {{ "%.0f"|format((1 - paper.distance) * 100) }}%"></div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    <div class="sidebar-card" style="animation-delay:0.25s">
       <div class="sidebar-title">Quick Info</div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div style="font-size:0.8rem">
@@ -562,18 +384,8 @@
           <div style="font-weight:500">{{ paper.venue_name[:50] }}</div>
         </div>
         <div style="font-size:0.8rem">
-          <div style="color:var(--muted);margin-bottom:3px">Year</div>
-          <div style="font-weight:500">{{ paper.publication_year }}</div>
-        </div>
-        <div style="font-size:0.8rem">
-          <div style="color:var(--muted);margin-bottom:3px">Authors</div>
-          <div style="font-weight:500">{{ authors|length }} author(s)</div>
-        </div>
-        <div style="font-size:0.8rem">
-          <div style="color:var(--muted);margin-bottom:3px">Citations</div>
-          <div style="color:var(--teal);font-family:'Inter',sans-serif;font-weight:700;font-size:1.1rem">
-            {{ paper.n_citations }}
-          </div>
+          <div style="color:var(--muted);margin-bottom:3px">Type</div>
+          <div style="font-weight:500">{{ paper.venue_type == 'J' and 'Journal' or 'Conference' }}</div>
         </div>
       </div>
     </div>
@@ -581,23 +393,38 @@
 </div>
 
 <script>
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-}
-
 async function toggleBookmark(paperId) {
   const btn = document.getElementById('bookmark-btn');
   const res = await fetch('/bookmark/' + paperId, { method: 'POST' });
   const data = await res.json();
   if (data.bookmarked) {
     btn.classList.add('bookmarked');
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Bookmarked`;
+    btn.textContent = 'Bookmarked';
   } else {
     btn.classList.remove('bookmarked');
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg> Bookmark`;
+    btn.textContent = 'Bookmark';
+  }
+}
+
+async function submitRating(paperId) {
+  const rating = document.getElementById('rating-val').value;
+  if (!rating) return alert("Please select a rating.");
+  
+  const res = await fetch('/rate/' + paperId, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rating: rating })
+  });
+  
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('tf-badge').textContent = data.new_tf + "/10 TF";
+    document.getElementById('rating-box').innerHTML = "<div style='color:var(--teal); font-weight:600;'>✓ Rating submitted successfully!</div>";
+    document.getElementById('rating-box').style.justifyContent = 'center';
+    document.getElementById('rating-box').style.background = 'var(--teal-dim)';
+    document.getElementById('rating-box').style.borderColor = '#00d4b430';
+  } else {
+    alert(data.error);
   }
 }
 </script>

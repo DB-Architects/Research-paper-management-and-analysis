@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Dashboard — Nexus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy:    #0a0f1e; --navy3:   #111e38; --card:    #0f1c35; --border:  #1a2d50;
+    --teal:    #00d4b4; --teal2:   #00b89a; --teal-dim:#00d4b420;
+    --amber:   #f59e0b; --amber-dim:#f59e0b18;
+    --text:    #e8eef8; --muted:   #6b82a8; --error:   #ff6b6b;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--navy); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  nav {
+    position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 24px;
+    padding: 0 40px; height: 64px; background: #0a0f1eee; border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--text); text-decoration: none; }
+  .nav-links { margin-left: auto; display: flex; gap: 24px; align-items: center; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+  .nav-links a:hover { color: var(--text); }
+  
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  .header { margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+  .header h1 { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 2rem; color: var(--teal); }
+  
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column;}
+  .card h2 { font-size: 1.2rem; margin-bottom: 16px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center;}
+  
+  .search-bar {
+    width: 100%; background: var(--navy); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; color: var(--text);
+    font-family: 'Inter', sans-serif; margin-bottom: 16px; outline: none;
+  }
+  .search-bar:focus { border-color: var(--teal); }
+
+  .list-container { overflow-y: auto; max-height: 600px; padding-right: 10px; }
+  .list-container::-webkit-scrollbar { width: 6px; }
+  .list-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .list-item { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 12px 0; border-bottom: 1px solid var(--border); 
+  }
+  .list-item:last-child { border-bottom: none; }
+  .item-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .item-meta { font-size: 0.8rem; color: var(--muted); }
+  
+  .del-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 12px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .del-btn:hover { border-color: var(--error); color: var(--error); }
+  
+  .role-badge { 
+    background: var(--navy3); border: 1px solid var(--border); border-radius: 100px; 
+    padding: 2px 8px; font-size: 0.7rem; color: var(--teal);
+  }
+  .tf-badge {
+    background: var(--amber-dim); border: 1px solid #f59e0b40; border-radius: 100px; 
+    padding: 2px 8px; font-size: 0.7rem; color: var(--amber); font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">Research Portal</a>
+  <div class="nav-links">
+    <a href="/profile">Back to Profile</a>
+    <a href="/logout">Logout</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="header">
+    <h1>Admin Dashboard</h1>
+    <p style="color: var(--muted); font-size: 0.9rem;">Manage platform users, monitor trust factors, and moderate papers.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Registered Users</h2>
+      <div class="list-container" id="user-list">
+        {% for u in users %}
+        <div class="list-item" id="user-{{ u.user_id }}">
+          <div>
+            <div class="item-title">
+              {{ u.username }} 
+              <span class="role-badge">{{ u.role }}</span>
+              <span class="tf-badge">TF: {{ u.trust_factor }}/10</span>
+            </div>
+            <div class="item-meta">{{ u.institute or 'No Institute' }}</div>
+          </div>
+          {% if u.user_id != session.user_id %}
+          <button class="del-btn" onclick="deleteUser({{ u.user_id }})">Ban User</button>
+          {% else %}
+          <span style="font-size: 0.8rem; color: var(--muted);">You</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>
+        Database Papers
+        <span style="font-size: 0.8rem; color: var(--muted); font-weight: 400;" id="paper-count">Showing latest 100</span>
+      </h2>
+      
+      <input type="text" id="paper-search" class="search-bar" placeholder="Search papers by title to delete..." onkeyup="searchAdminPapers()">
+      
+      <div class="list-container" id="paper-list">
+        {% for p in papers %}
+        <div class="list-item" id="paper-{{ p.paper_id }}">
+          <div>
+            <div class="item-title">{{ p.title[:55] }}...</div>
+            <div class="item-meta">ID: {{ p.paper_id }} | Year: {{ p.publication_year }}</div>
+          </div>
+          <button class="del-btn" onclick="deletePaper({{ p.paper_id }})">Delete</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function deleteUser(id) {
+  if (!confirm('Are you sure? This will delete the user and all papers they uploaded.')) return;
+  const res = await fetch('/admin/delete-user/' + id, { method: 'POST' });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('user-' + id).remove();
+  } else alert(data.error);
+}
+
+async function deletePaper(id) {
+  if (!confirm('Are you sure you want to permanently delete this paper?')) return;
+  const res = await fetch('/delete-papers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paper_ids: [id] })
+  });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('paper-' + id).remove();
+  } else alert(data.error);
+}
+
+// LIVE SEARCH LOGIC
+let searchTimeout = null;
+async function searchAdminPapers() {
+  clearTimeout(searchTimeout);
+  const query = document.getElementById('paper-search').value;
+  
+  // Wait 300ms after user stops typing before hitting the database
+  searchTimeout = setTimeout(async () => {
+    const res = await fetch('/admin/search-papers?q=' + encodeURIComponent(query));
+    const data = await res.json();
+    
+    const list = document.getElementById('paper-list');
+    list.innerHTML = ''; // Clear current list
+    
+    if (data.papers.length === 0) {
+      list.innerHTML = '<div style="padding: 20px; color: var(--muted); text-align: center;">No papers found.</div>';
+      document.getElementById('paper-count').textContent = "0 results";
+      return;
+    }
+
+    document.getElementById('paper-count').textContent = data.papers.length + (query ? " results" : " latest");
+
+    data.papers.forEach(p => {
+      const titleShort = p.title.length > 55 ? p.title.substring(0, 55) + '...' : p.title;
+      list.innerHTML += `
+        <div class="list-item" id="paper-${p.paper_id}">
+          <div>
+            <div class="item-title">${titleShort}</div>
+            <div class="item-meta">ID: ${p.paper_id} | Year: ${p.publication_year}</div>
+          </div>
+          <button class="del-btn" onclick="deletePaper(${p.paper_id})">Delete</button>
+        </div>
+      `;
+    });
+  }, 300);
+}
+</script>
+
+</body>
+</html>

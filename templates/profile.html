@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>{{ session.username }} — Nexus Profile</title>
+<title>{{ session.username }} — Profile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
@@ -38,9 +38,8 @@
   }
   .nav-logo {
     font-family:'Inter',sans-serif; font-weight:800;
-    font-size:1.2rem; color:var(--teal); text-decoration:none;
+    font-size:1.2rem; color:var(--text); text-decoration:none;
   }
-  .nav-logo span{color:var(--text);}
   .nav-search {
     flex:1; max-width:480px; display:flex;
     background:var(--card); border:1px solid var(--border);
@@ -73,6 +72,10 @@
     display:grid;
     grid-template-columns:260px 1fr;
     gap:32px;
+  }
+  @media (max-width: 900px) {
+    .page { grid-template-columns: 1fr; gap: 24px; }
+    .profile-sidebar { position: static; }
   }
 
   /* ── PROFILE SIDEBAR ── */
@@ -107,6 +110,17 @@
     font-family:'Inter',sans-serif;
     font-size:1.1rem;font-weight:700;margin-bottom:4px;
   }
+  .profile-trust {
+    display: inline-block;
+    background: var(--amber-dim);
+    border: 1px solid #f59e0b40;
+    color: var(--amber);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    margin-bottom: 12px;
+  }
 
   .profile-institute {
     font-size:0.8rem;color:var(--muted);margin-bottom:20px;
@@ -140,6 +154,17 @@
     transition:background 0.15s;margin-bottom:10px;
   }
   .for-you-btn:hover{background:var(--teal2);}
+
+  .upload-btn {
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;background:transparent;
+    border:1px solid var(--teal);border-radius:10px;padding:11px;
+    color:var(--teal);font-size:0.85rem;
+    font-family:'Inter',sans-serif;font-weight:700;
+    cursor:pointer;text-decoration:none;
+    transition:background 0.15s;margin-bottom:10px;
+  }
+  .upload-btn:hover{background:var(--teal-dim);}
 
   .logout-btn {
     display:block;width:100%;
@@ -316,7 +341,7 @@
 <body>
 
 <nav>
-  
+  <a class="nav-logo" href="/">Research Portal</a>
   <form class="nav-search" action="/search" method="GET">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -325,6 +350,9 @@
     <button type="submit">Go</button>
   </form>
   <div class="nav-links">
+    {% if session.role == 'admin' %}
+      <a href="/admin">Admin Board</a>
+    {% endif %}
     <a href="/analytics">Analytics</a>
     <a href="/for-you">For You</a>
     <a href="/profile" class="nav-active">{{ session.username }}</a>
@@ -338,6 +366,7 @@
     <div class="profile-card">
       <div class="avatar">{{ session.username[0].upper() }}</div>
       <div class="profile-name">{{ session.username }}</div>
+      <div class="profile-trust">Trust Factor: {{ user.trust_factor }}/10</div>
       <div class="profile-institute">{{ user.institute or 'No institute set' }}</div>
 
       <div class="profile-stats">
@@ -355,9 +384,8 @@
         </div>
       </div>
 
-      <a class="for-you-btn" href="/for-you">
-        ✦ View Your For You Page
-      </a>
+      <a class="for-you-btn" href="/for-you">✦ View Your For You Page</a>
+      <a class="upload-btn" href="/add-paper">↑ Upload Research Paper</a>
       <a class="logout-btn" href="/logout">← Logout</a>
     </div>
   </aside>
@@ -529,7 +557,6 @@
 </div>
 
 <script>
-// --- CONSOLIDATED LOGIC ---
 function switchTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));

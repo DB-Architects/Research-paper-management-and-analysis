@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Analytics — Nexus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
@@ -28,7 +28,7 @@
   body {
     background: var(--navy);
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     min-height: 100vh;
   }
 
@@ -55,7 +55,7 @@
   }
 
   .nav-logo {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 800; font-size: 1.2rem;
     color: var(--teal); text-decoration: none; white-space: nowrap;
   }
@@ -73,12 +73,12 @@
   .nav-search input {
     flex: 1; background: none; border: none; outline: none;
     padding: 10px 0; font-size: 0.92rem; color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
   .nav-search input::placeholder { color: var(--muted2); }
   .nav-search button {
     background: var(--teal); border: none; padding: 0 20px;
-    cursor: pointer; font-family: 'Syne', sans-serif;
+    cursor: pointer; font-family: 'Inter', sans-serif;
     font-weight: 700; font-size: 0.82rem; color: var(--navy);
   }
 
@@ -117,7 +117,7 @@
   }
 
   .page-header h1 {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 2rem;
     font-weight: 800;
     letter-spacing: -0.5px;
@@ -164,7 +164,7 @@
   }
 
   .stat-card-num {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 1.6rem;
     font-weight: 800;
     color: var(--teal);
@@ -203,7 +203,7 @@
   }
 
   .chart-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     font-weight: 700;
     letter-spacing: -0.2px;
@@ -260,7 +260,7 @@
   .data-table tr:hover td { color: var(--teal); }
 
   .rank-num {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     color: var(--muted2);
     width: 28px;
@@ -277,7 +277,7 @@
   }
 
   .table-num {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 700;
     color: var(--teal);
     text-align: right;
@@ -330,7 +330,7 @@
   }
 
   .bar-val {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.78rem;
     font-weight: 700;
     color: var(--teal);
@@ -358,7 +358,7 @@
 
 <!-- NAV -->
 <nav>
-  <a class="nav-logo" href="/">Nexus<span>.</span></a>
+  
   <form class="nav-search" action="/search" method="GET">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -512,7 +512,7 @@ const venueData   = {{ top_venues | map(attribute='avg_citations') | list | tojs
 
 // ── CHART DEFAULTS ──
 Chart.defaults.color = '#6b82a8';
-Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.family = "'Inter', sans-serif";
 
 // ── YEAR CHART (Line) ──
 new Chart(document.getElementById('yearChart'), {

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>{{ paper.title[:60] }} — Nexus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
   :root {
     --navy:    #0a0f1e;
@@ -27,7 +27,7 @@
   body {
     background: var(--navy);
     color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     min-height: 100vh;
   }
 
@@ -54,7 +54,7 @@
   }
 
   .nav-logo {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 800; font-size: 1.2rem;
     color: var(--teal); text-decoration: none; white-space: nowrap;
   }
@@ -73,12 +73,12 @@
   .nav-search input {
     flex: 1; background: none; border: none; outline: none;
     padding: 10px 0; font-size: 0.92rem; color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
   .nav-search input::placeholder { color: var(--muted2); }
   .nav-search button {
     background: var(--teal); border: none; padding: 0 20px;
-    cursor: pointer; font-family: 'Syne', sans-serif;
+    cursor: pointer; font-family: 'Inter', sans-serif;
     font-weight: 700; font-size: 0.82rem; color: var(--navy);
     transition: background 0.2s;
   }
@@ -139,7 +139,7 @@
   }
 
   .paper-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: clamp(1.3rem, 3vw, 1.9rem);
     font-weight: 800;
     line-height: 1.25;
@@ -180,7 +180,7 @@
     gap: 8px; font-size: 0.85rem; color: var(--muted);
   }
   .stat-item svg { width: 15px; height: 15px; color: var(--teal); }
-  .stat-item strong { color: var(--text); font-family: 'Syne', sans-serif; }
+  .stat-item strong { color: var(--text); font-family: 'Inter', sans-serif; }
 
   .paper-actions {
     display: flex; gap: 12px; flex-wrap: wrap;
@@ -191,7 +191,7 @@
     padding: 10px 20px; border-radius: 10px;
     font-size: 0.85rem; font-weight: 600;
     text-decoration: none; cursor: pointer;
-    border: none; font-family: 'DM Sans', sans-serif;
+    border: none; font-family: 'Inter', sans-serif;
     transition: all 0.15s;
   }
   .btn svg { width: 15px; height: 15px; }
@@ -231,7 +231,7 @@
   }
 
   .section-label {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 2px;
@@ -260,7 +260,7 @@
     flex: 1; padding: 8px;
     border-radius: 7px;
     border: none; background: none;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.85rem; font-weight: 500;
     color: var(--muted); cursor: pointer;
     transition: all 0.15s;
@@ -286,7 +286,7 @@
   .citation-item:hover .citation-title { color: var(--teal); }
 
   .citation-num {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     color: var(--muted2);
     min-width: 24px;
@@ -319,7 +319,7 @@
   }
 
   .sidebar-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 2px;
@@ -385,7 +385,7 @@
 <body>
 
 <nav>
-  <a class="nav-logo" href="/">Nexus<span>.</span></a>
+  
   <form class="nav-search" action="/search" method="GET">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -571,7 +571,7 @@
         </div>
         <div style="font-size:0.8rem">
           <div style="color:var(--muted);margin-bottom:3px">Citations</div>
-          <div style="color:var(--teal);font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem">
+          <div style="color:var(--teal);font-family:'Inter',sans-serif;font-weight:700;font-size:1.1rem">
             {{ paper.n_citations }}
           </div>
         </div>

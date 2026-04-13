@@ -28,7 +28,7 @@ print("Loading SentenceTransformer model...")
 embedder = SentenceTransformer('all-MiniLM-L6-v2')
 print("Model loaded successfully!")
 
-# # --- FRONTEND DEV MODE: DUMMY MODEL ---
+# --- FRONTEND DEV MODE: DUMMY MODEL ---
 # print("Loading DUMMY model for fast UI testing...")
 # class DummyEmbedder:
 #     def encode(self, text, *args, **kwargs):

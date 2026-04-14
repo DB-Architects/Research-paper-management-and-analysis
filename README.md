@@ -1,171 +1,120 @@
-📚 Nexus: AI-Powered Research Discovery System
-Built by: The DB Architects | IIT Kharagpur
+# Research Portal: Research Paper Management & Analytics System
 
-Nexus is a full-stack research paper management system that uses Machine Learning to understand the semantic meaning of abstracts. It moves beyond simple keyword matching to provide AI-driven recommendations and local PDF hosting.
+**Research Portal** is an intelligent, full-stack research paper database system that seamlessly integrates advanced relational database techniques with machine learning analytics. Built for researchers, it allows users to discover relevant literature, explore multi-hop citation networks, organize collections, and receive AI-powered semantic recommendations. 
 
-🛠️ Phase 1: Database Setup (The "One-Click" Schema)
-Open pgAdmin or your terminal, connect to your server, and run this entire block to build the database architecture from scratch:
+Built by **The DB Architects**.
 
-```sql
--- 1. Create Database
-DROP DATABASE dblp_project;
-CREATE DATABASE dblp_project;
+---
 
--- 2. Enable ML Vector Support (Run inside dblp_project)
-CREATE EXTENSION IF NOT EXISTS vector;
+## 🚀 Key DBMS & ML Features
 
--- 3. Academic Tables
-CREATE TABLE Venues (
-    venue_id BIGINT PRIMARY KEY,
-    venue_name VARCHAR(255),
-    venue_type CHAR(1) -- 'C' for Conference, 'J' for Journal
-);
+### Advanced Database Concepts
+* **Recursive CTEs (Graph Traversal):** Utilizes `WITH RECURSIVE` queries to dynamically traverse multi-hop citation chains (up to 3 levels deep).
+* **Window Functions:** Employs `ROW_NUMBER() OVER (PARTITION BY ...)` to accurately rank and limit citation graphs by depth level.
+* **ACID Transactions & Strict Concurrency:** Uses `SERIALIZABLE` isolation levels and explicit `BEGIN/COMMIT` blocks during multi-table paper uploads to prevent dirty or phantom reads.
+* **Upserts (`ON CONFLICT DO UPDATE`):** Manages user private annotations efficiently without race conditions.
+* **Cascading Deletes (`ON DELETE CASCADE`):** Maintains referential integrity across Many-to-Many relationships (e.g., Folders/Collections and User Accounts).
+* **Materialized Views:** Pre-computes expensive aggregations (Top Venues, Top Authors) for instantaneous analytics loading.
+* **Indexing Strategies:** Employs B-Tree indexes for relational sorting and GIN indexes for Full-Text Search.
 
-CREATE TABLE Papers (
-    paper_id BIGINT PRIMARY KEY,
-    title TEXT,
-    publication_year INT,
-    abstract_text TEXT,
-    n_citations INT DEFAULT 0,
-    venue_id BIGINT REFERENCES Venues(venue_id),
-    uploaded_by INT, 
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    pdf_path VARCHAR(255)
-);
+### Machine Learning Integration
+* **Vector Database (`pgvector`):** Stores 384-dimensional embeddings for research paper abstracts directly inside PostgreSQL.
+* **Hybrid Search (Reciprocal Rank Fusion):** Combines Lexical Keyword Search (`to_tsvector`) with Semantic Vector Search (Cosine Distance) to deliver state-of-the-art query results.
+* **Two-Stage Re-Ranking Pipeline:** For personalized recommendations, the database acts as a candidate generator (fetching top semantic matches) and then re-ranks them based on citation popularity.
+* **Implicit User Affinity ("Research DNA"):** Uses complex `UNION` and `JOIN` combinations on user history logs to deduce implicit author networks.
 
-CREATE TABLE Authors (
-    author_id BIGINT PRIMARY KEY,
-    name VARCHAR(255)
-);
+---
 
-CREATE TABLE Paper_Authors (
-    paper_id BIGINT REFERENCES Papers(paper_id),
-    author_id BIGINT REFERENCES Authors(author_id),
-    PRIMARY KEY (paper_id, author_id)
-);
+## 🗄️ Database Schema Details
 
-CREATE TABLE Citations (
-    citing_paper_id BIGINT,
-    cited_paper_id BIGINT,
-    PRIMARY KEY (citing_paper_id, cited_paper_id)
-);
+The database is highly normalized (3NF) to ensure referential integrity and minimize redundancy[cite: 13, 30].
 
--- 4. User & Application Tables
-CREATE TABLE Users (
-    user_id SERIAL PRIMARY KEY,
-    username VARCHAR(100) UNIQUE,
-    password_hash VARCHAR(255),
-    gender VARCHAR(50),
-    age INT,
-    institute VARCHAR(255),
-    role VARCHAR(20) DEFAULT 'user',         -- Admin/User Role Access
-    trust_factor NUMERIC(4,2) DEFAULT 5.0    -- User Reputation System
-);
+### 1. Academic Entities
+* **`Venues`**: Stores `venue_id`, `venue_name`, and `venue_type` ('C' for Conference, 'J' for Journal)[cite: 13].
+* **`Papers`**: Core entity storing `paper_id`, `title`, `publication_year`, `abstract_text`, `n_citations`, `venue_id` (FK), and upload metadata.
+* **`Authors`**: Stores `author_id` and `name`.
+* **`Paper_Authors`**: Junction table (Many-to-Many) linking Papers and Authors.
+* **`Citations`**: Directed graph edges storing `citing_paper_id` and `cited_paper_id`.
 
-CREATE TABLE Reading_History (
-    log_id BIGSERIAL PRIMARY KEY,
-    user_id INT REFERENCES Users(user_id),
-    paper_id BIGINT,
-    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+### 2. Machine Learning Entities
+* **`Paper_Embeddings`**: Stores `paper_id` (PK/FK) and `embedding` (`vector(384)`).
 
-CREATE TABLE Bookmarks (
-    user_id INT REFERENCES Users(user_id),
-    paper_id BIGINT,
-    bookmarked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, paper_id)
-);
+### 3. User & Application Entities
+* **`Users`**: Stores authentication, demographics, `role` (Admin/User), and dynamic `trust_factor`.
+* **`Reading_History` / `Search_History`**: Interaction logs for analytics and ML personalization.
+* **`Bookmarks`**: User-saved papers.
+* **`Paper_Ratings`**: Implements `CHECK` constraints (1-10) to dynamically adjust uploader Trust Factors.
+* **`Paper_Notes`**: Private user annotations (Upsert enabled).
+* **`Collections` / `Collection_Papers`**: Custom reading folders with Many-to-Many relationships and cascading deletes.
 
-CREATE TABLE Search_History (
-    user_id INT REFERENCES Users(user_id),
-    query TEXT,
-    searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+---
 
--- Rating System Table
-CREATE TABLE Paper_Ratings (
-    user_id INT REFERENCES Users(user_id),
-    paper_id BIGINT REFERENCES Papers(paper_id),
-    rating INT CHECK (rating >= 1 AND rating <= 10),
-    PRIMARY KEY (user_id, paper_id)
-);
+## 💻 Installation & Execution Steps
 
-CREATE TABLE Paper_Embeddings (
-    paper_id BIGINT PRIMARY KEY REFERENCES Papers(paper_id),
-    embedding vector(384) -- Matches all-MiniLM-L6-v2 dimensions
-);
+### Prerequisites
+1. **Python 3.9+**
+2. **PostgreSQL 16(don't use postgreSQL 18 as pgvector extension not supported)**
+3. **pgvector extension** (Must be installed in your PostgreSQL instance) 
 
--- Speed up sorting by citations (used on home page and search)
-CREATE INDEX idx_papers_citations ON Papers(n_citations DESC);
+### Step 1: Database Setup
+1. Log into your PostgreSQL terminal.
+2. Create the database and enable the vector extension:
+   ```sql
+   CREATE DATABASE dblp_project;
+   \c dblp_project
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+3. Execute the schema SQL to create all tables, indexes, and materialized views.
+4. Import your DBLP/arXiv JSONL data into the relational tables. *(Ensure `user_id = 0` exists for admin uploads).*
 
--- Speed up filtering and sorting by year
-CREATE INDEX idx_papers_year ON Papers(publication_year DESC);
+### Step 2: Environment Setup
+1. Clone the repository and navigate to the project folder.
+2. Create a virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   pip install flask psycopg2-binary sentence-transformers werkzeug
+   ```
 
--- Speed up JOINs between Papers and Venues
-CREATE INDEX idx_papers_venue_id ON Papers(venue_id);
+### Step 3: Generate ML Vector Embeddings
+Before running the web application, you must embed the research abstracts.
+1. Open `generate_embeddings.py` and ensure the database credentials match your local setup.
+2. Run the script. *(Note: The first run will download the ~90MB `BAAI/bge-small-en-v1.5` model).*
+   ```bash
+   python generate_embeddings.py
+   ```
+   *Tip: If using an Apple Silicon Mac, ensure `device='mps'` is set in the model initialization for GPU acceleration.*
 
--- Speed up JOINs for the Authors relationship
-CREATE INDEX idx_pa_paper_id ON Paper_Authors(paper_id);
-CREATE INDEX idx_pa_author_id ON Paper_Authors(author_id);
+### Step 4: Run the Application
+1. Open `app.py` and verify your database credentials in the `DB_PARAMS` dictionary.
+2. Start the Flask development server:
+   ```bash
+   python app.py
+   ```
+3. Open your browser and navigate to `http://localhost:5000`.
 
--- Create a GIN index for lightning-fast keyword search on title and abstract
-CREATE INDEX idx_papers_fts ON Papers USING GIN (to_tsvector('english', title || ' ' || abstract_text));
+### Default Admin Credentials
+To access the Admin Dashboard for user moderation and venue standardization:
+* **Username:** `admin`
+* **Password:** `admin123`
 
--- Materialized View for Top Venues
-CREATE MATERIALIZED VIEW mv_top_venues AS
-SELECT v.venue_name, COUNT(p.paper_id) as total_papers, 
-       COALESCE(AVG(p.n_citations), 0) as avg_citations, 
-       COALESCE(SUM(p.n_citations), 0) as total_citations
-FROM Venues v
-JOIN Papers p ON v.venue_id = p.venue_id
-GROUP BY v.venue_id, v.venue_name
-ORDER BY avg_citations DESC
-LIMIT 10;
+---
 
--- Materialized View for Top Authors
-CREATE MATERIALIZED VIEW mv_top_authors AS
-SELECT a.name, COUNT(pa.paper_id) as total_papers, 
-       COALESCE(SUM(p.n_citations), 0) as total_citations
-FROM Authors a
-JOIN Paper_Authors pa ON a.author_id = pa.author_id
-JOIN Papers p ON pa.paper_id = p.paper_id
-GROUP BY a.author_id, a.name
-ORDER BY total_citations DESC
-LIMIT 10;
+## 📂 Project Structure
 
+```text
+├── app.py                     # Main Flask application and API routes
+├── generate_embeddings.py     # ML script for populating the pgvector database
+├── static/
+│   └── uploads/papers/        # Directory for user-uploaded PDF files
+└── templates/
+    ├── base.html              # Master layout and global navigation
+    ├── index.html             # Homepage and global search
+    ├── search.html            # Hybrid Search (Keyword + Semantic) results
+    ├── paper.html             # Paper details, notes, citations, and ML recommendations
+    ├── profile.html           # User dashboard (History, Folders, Uploads, Settings)
+    ├── foryou.html            # Personalized feed based on Implicit Affinity & ML
+    ├── analytics.html         # Materialized View charts and database statistics
+    ├── admin.html             # Admin dashboard for DML overrides
+    └── ...
 ```
-
-## ⚙️ Phase 2: Python Environment
-Install all necessary libraries with a single command:
-
-```bash
-pip install -r requirements.txt
-
-
-📂 Phase 3: The Data Pipeline
-Nexus is powered by the DBLP Citation Network Dataset (v12). Run these scripts in order to populate your database:
-
-python3 filter_data.py: Downloads the 12GB dataset, filters for Computer Science papers (2018 onwards), and cleans abstracts.
-
-python3 populate_db.py: Executes high-performance batch insertion into your local Postgres tables.
-
-python3 generate_embeddings.py: Runs the local ML model to create semantic AI vectors for the first 10,000 papers.
-
-🚀 Phase 4: Run the Application
-Start the Flask server:
-
-python3 app.py
-
-
-Open http://127.0.0.1:5000 in your browser to start exploring.
-
-🌟 Key Features for Users:
-Account System: Sign up to track your search history and reading logs.
-
-Semantic Search: Find papers based on the actual meaning of your query, not just exact words.
-
-AI Feed: Use the "For You" page to get personalized recommendations based on your reading history.
-
-Paper Management: Upload your own research papers (with PDF support), edit details, or perform bulk deletions.
-
-Analytics: View global publication trends and author impact via the interactive dashboard.

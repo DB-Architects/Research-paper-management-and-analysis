@@ -342,7 +342,75 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
+# --- ADMIN DASHBOARD ---
+@app.route("/admin")
+@admin_required
+def admin_dashboard():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT user_id, username, role, institute, trust_factor FROM Users ORDER BY user_id DESC")
+    users = cur.fetchall()
+    cur.execute("SELECT paper_id, title, publication_year FROM Papers ORDER BY uploaded_at DESC NULLS LAST LIMIT 100")
+    papers = cur.fetchall()
+    cur.close(); conn.close()
+    return render_template("admin.html", users=users, papers=papers)
 
+@app.route("/admin/search-papers")
+@admin_required
+def admin_search_papers():
+    query = request.args.get("q", "").strip()
+    conn = get_db()
+    cur = conn.cursor()
+    
+    if query:
+        # ILIKE is Postgres's case-insensitive search
+        cur.execute("""
+            SELECT paper_id, title, publication_year 
+            FROM Papers 
+            WHERE title ILIKE %s 
+            ORDER BY paper_id DESC LIMIT 50
+        """, (f"%{query}%",))
+    else:
+        # If search is empty, just return the 100 most recent
+        cur.execute("""
+            SELECT paper_id, title, publication_year 
+            FROM Papers 
+            ORDER BY uploaded_at DESC NULLS LAST LIMIT 100
+        """)
+        
+    papers = cur.fetchall()
+    cur.close(); conn.close()
+    return jsonify({"papers": papers})
+
+@app.route("/admin/delete-user/<int:del_uid>", methods=["POST"])
+@admin_required
+def admin_delete_user(del_uid):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT paper_id FROM Papers WHERE uploaded_by = %s", (del_uid,))
+        user_papers = [r["paper_id"] for r in cur.fetchall()]
+        if user_papers:
+            cur.execute("DELETE FROM Paper_Ratings WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Embeddings WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Bookmarks WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Reading_History WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Authors WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Citations WHERE citing_paper_id = ANY(%s) OR cited_paper_id = ANY(%s)", (user_papers, user_papers))
+            cur.execute("DELETE FROM Papers WHERE paper_id = ANY(%s)", (user_papers,))
+        
+        cur.execute("DELETE FROM Paper_Ratings WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Bookmarks WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Reading_History WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Search_History WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Users WHERE user_id = %s", (del_uid,))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
 # ── PROFILE & PAPER MANAGEMENT ─────────────────────────────────────────────────
 
 @app.route("/profile")

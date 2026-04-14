@@ -177,12 +177,18 @@ def paper_detail(paper_id):
 
     has_rated = False
     is_bookmarked = False
+    user_note = "" # NEW: Variable to hold the user's note
     if "user_id" in session and session.get("role") != "admin":
         cur.execute("SELECT 1 FROM Paper_Ratings WHERE user_id = %s AND paper_id = %s", (session["user_id"], paper_id))
         if cur.fetchone(): has_rated = True
             
         cur.execute("SELECT 1 FROM Bookmarks WHERE user_id = %s AND paper_id = %s", (session["user_id"], paper_id))
         if cur.fetchone(): is_bookmarked = True
+
+        # NEW: Fetch the user's private note for this paper
+        cur.execute("SELECT note_text FROM Paper_Notes WHERE user_id = %s AND paper_id = %s", (session["user_id"], paper_id))
+        note_row = cur.fetchone()
+        if note_row: user_note = note_row["note_text"]
 
         cur.execute("INSERT INTO Reading_History (user_id, paper_id, viewed_at) VALUES (%s, %s, NOW())", 
                     (session["user_id"], paper_id))
@@ -750,6 +756,133 @@ def analytics():
         total_venues=f"{total_venues:,}",
         total_users=f"{total_users:,}",
     )
+
+# author part
+@app.route("/search_authors")
+def search_authors():
+    query = request.args.get("q", "").strip()
+    if not query:
+        return redirect(url_for("index"))
+
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # Advanced DB Concept: ILIKE for case-insensitive substring matching, 
+    # joined with aggregations to show author stats in search results.
+    cur.execute("""
+        SELECT a.author_id, a.name, 
+               COUNT(pa.paper_id) as total_papers,
+               COALESCE(SUM(p.n_citations), 0) as total_citations
+        FROM Authors a
+        LEFT JOIN Paper_Authors pa ON a.author_id = pa.author_id
+        LEFT JOIN Papers p ON pa.paper_id = p.paper_id
+        WHERE a.name ILIKE %s
+        GROUP BY a.author_id, a.name
+        ORDER BY total_citations DESC, total_papers DESC
+        LIMIT 20
+    """, (f"%{query}%",))
+    
+    results = cur.fetchall()
+    cur.close(); conn.close()
+    
+    # You can reuse search.html or render a simple template. 
+    # Assuming we pass it to a new template or handle it in UI.
+    return render_template("author_search_results.html", query=query, results=results)
+
+
+@app.route("/author/<int:author_id>")
+def author_profile(author_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    # 1. Get basic author info
+    cur.execute("SELECT * FROM Authors WHERE author_id = %s", (author_id,))
+    author = cur.fetchone()
+    if not author: return "Author not found", 404
+
+    # 2. Get author's papers
+    cur.execute("""
+        SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name
+        FROM Papers p
+        JOIN Paper_Authors pa ON p.paper_id = pa.paper_id
+        LEFT JOIN Venues v ON p.venue_id = v.venue_id
+        WHERE pa.author_id = %s
+        ORDER BY p.publication_year DESC, p.n_citations DESC
+    """, (author_id,))
+    papers = cur.fetchall()
+
+    # 3. Calculate total citations and top venue
+    total_citations = sum(p["n_citations"] for p in papers)
+    
+    # 4. ADVANCED DBMS: Author Network Reach (Recursive CTE)
+    # This finds how many papers cited THIS author's papers (Depth 1)
+    # How many papers cited THOSE papers (Depth 2), and so on up to Depth 3.
+    cur.execute("""
+        WITH RECURSIVE AuthorPapers AS (
+            SELECT paper_id FROM Paper_Authors WHERE author_id = %s
+        ),
+        CitationGraph AS (
+            -- Base Case: Papers directly citing the author's papers
+            SELECT c.citing_paper_id AS paper_id, 1 AS depth
+            FROM Citations c
+            INNER JOIN AuthorPapers ap ON c.cited_paper_id = ap.paper_id
+            
+            UNION ALL
+            
+            -- Recursive Step: Multi-hop citations (Papers citing the citing papers)
+            SELECT c.citing_paper_id, cg.depth + 1
+            FROM Citations c
+            INNER JOIN CitationGraph cg ON c.cited_paper_id = cg.paper_id
+            WHERE cg.depth < 3
+        )
+        -- Aggregate unique papers at each depth level
+        SELECT depth, COUNT(DISTINCT paper_id) as hop_count
+        FROM CitationGraph
+        GROUP BY depth
+        ORDER BY depth;
+    """, (author_id,))
+    network_reach = {row["depth"]: row["hop_count"] for row in cur.fetchall()}
+
+    cur.close(); conn.close()
+
+    return render_template("author.html", 
+                           author=author, 
+                           papers=papers, 
+                           total_citations=total_citations,
+                           network_reach=network_reach)
+
+@app.route("/save_note/<int:paper_id>", methods=["POST"])
+@login_required
+def save_note(paper_id):
+    data = request.get_json()
+    note_text = data.get("note_text", "").strip()
+    user_id = session["user_id"]
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        if not note_text:
+            # If the note is empty, we delete the record to save space
+            cur.execute("DELETE FROM Paper_Notes WHERE user_id = %s AND paper_id = %s", (user_id, paper_id))
+        else:
+            # ADVANCED DBMS: The UPSERT (Insert or Update)
+            # If the user_id + paper_id combination already exists, it updates the text.
+            cur.execute("""
+                INSERT INTO Paper_Notes (user_id, paper_id, note_text, last_updated)
+                VALUES (%s, %s, %s, NOW())
+                ON CONFLICT (user_id, paper_id) 
+                DO UPDATE SET note_text = EXCLUDED.note_text, last_updated = NOW()
+            """, (user_id, paper_id, note_text))
+            
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

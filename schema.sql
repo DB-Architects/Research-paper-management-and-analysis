@@ -86,6 +86,14 @@ CREATE TABLE Paper_Embeddings (
     embedding vector(384) -- Matches all-MiniLM-L6-v2 dimensions
 );
 
+CREATE TABLE Paper_Notes (
+    user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+    paper_id BIGINT REFERENCES Papers(paper_id) ON DELETE CASCADE,
+    note_text TEXT,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, paper_id)
+);
+
 -- Speed up sorting by citations (used on home page and search)
 CREATE INDEX idx_papers_citations ON Papers(n_citations DESC);
 
@@ -115,7 +123,7 @@ LIMIT 10;
 
 -- Materialized View for Top Authors
 CREATE MATERIALIZED VIEW mv_top_authors AS
-SELECT a.name, COUNT(pa.paper_id) as total_papers, 
+SELECT a.author_id, a.name, COUNT(pa.paper_id) as total_papers, 
        COALESCE(SUM(p.n_citations), 0) as total_citations
 FROM Authors a
 JOIN Paper_Authors pa ON a.author_id = pa.author_id

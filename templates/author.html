@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>{{ author.name }} — Author Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  /* Use the exact same :root variables and base styles from profile.html/paper.html here */
+  :root { --navy:#0a0f1e; --card:#0f1c35; --border:#1a2d50; --teal:#00d4b4; --teal-dim:#00d4b420; --text:#e8eef8; --muted:#6b82a8; }
+  body { background: var(--navy); color: var(--text); font-family: 'Inter', sans-serif; margin:0; padding:40px 24px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .header-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 36px; margin-bottom: 24px; border-top: 3px solid var(--teal); }
+  .author-name { font-size: 2.2rem; font-weight: 800; margin-bottom: 20px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 30px; }
+  .stat-box { background: var(--navy); border: 1px solid var(--border); padding: 16px; border-radius: 12px; text-align: center; }
+  .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--teal); }
+  .stat-lbl { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
+  
+  .network-card { background: var(--teal-dim); border: 1px solid #00d4b430; border-radius: 12px; padding: 20px; margin-bottom: 32px; }
+  .network-title { font-size: 0.85rem; font-weight: 700; color: var(--teal); margin-bottom: 12px; text-transform: uppercase; }
+  .network-flex { display: flex; gap: 24px; }
+  .hop-item { flex: 1; border-left: 2px solid var(--teal); padding-left: 12px; }
+  .hop-val { font-size: 1.2rem; font-weight: 700; }
+  .hop-lbl { font-size: 0.75rem; color: var(--muted); }
+
+  .paper-item { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 12px; text-decoration: none; color: inherit; transition: border-color 0.2s; }
+  .paper-item:hover { border-color: var(--teal); }
+  .p-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+  .p-meta { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="javascript:history.back()" style="color:var(--teal); text-decoration:none; font-size:0.85rem; display:inline-block; margin-bottom:20px;">← Back</a>
+  
+  <div class="header-card">
+    <div class="author-name">{{ author.name }}</div>
+    
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-val">{{ papers|length }}</div>
+        <div class="stat-lbl">Publications</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">{{ total_citations }}</div>
+        <div class="stat-lbl">Direct Citations</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">{{ network_reach.get(2, 0) + network_reach.get(3, 0) }}</div>
+        <div class="stat-lbl">Extended Network Cites</div>
+      </div>
+    </div>
+
+    <div class="network-card">
+      <div class="network-title">Citation Graph Reach (Impact Factor)</div>
+      <div class="network-flex">
+        <div class="hop-item">
+          <div class="hop-val">{{ network_reach.get(1, 0) }}</div>
+          <div class="hop-lbl">L1 (Direct) Citing Papers</div>
+        </div>
+        <div class="hop-item" style="border-color: #f59e0b;">
+          <div class="hop-val">{{ network_reach.get(2, 0) }}</div>
+          <div class="hop-lbl">L2 (2-Hop) Citing Papers</div>
+        </div>
+        <div class="hop-item" style="border-color: #6b82a8;">
+          <div class="hop-val">{{ network_reach.get(3, 0) }}</div>
+          <div class="hop-lbl">L3 (3-Hop) Citing Papers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-bottom: 16px; font-size:1.1rem;">Publications</h3>
+  {% for paper in papers %}
+  <a href="/paper/{{ paper.paper_id }}" class="paper-item">
+    <div class="p-title">{{ paper.title }}</div>
+    <div class="p-meta">
+      <span>Published: {{ paper.publication_year }} | Venue: {{ paper.venue_name[:40] }}...</span>
+      <span style="color:var(--teal); font-weight:600;">↑ {{ paper.n_citations }} Cites</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+</body>
+</html>

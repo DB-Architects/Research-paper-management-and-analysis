@@ -438,7 +438,9 @@
       {% set max_cites = top_authors[0].total_citations if top_authors else 1 %}
       {% for author in top_authors[:8] %}
       <div class="bar-row">
-        <div class="bar-label" title="{{ author.name }}">{{ author.name }}</div>
+        <a href="/author/{{ author.author_id }}" class="bar-label" title="{{ author.name }}" style="text-decoration:none; color:var(--text); transition:color 0.2s;" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--text)'">
+            {{ author.name }}
+        </a>
         <div class="bar-track">
           <div class="bar-fill"
                style="width: {{ (author.total_citations / max_cites * 100)|int }}%">

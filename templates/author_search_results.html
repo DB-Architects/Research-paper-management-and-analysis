@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Authors: {{ query }} — Author Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  /* Base Nexus Styling */
+  :root { --navy:#0a0f1e; --navy3:#111e38; --card:#0f1c35; --border:#1a2d50; --teal:#00d4b4; --teal2:#00b89a; --teal-dim:#00d4b420; --teal-glow: 0 0 40px #00d4b430; --text:#e8eef8; --muted:#6b82a8; --muted2:#3d5278; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--navy); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.15; pointer-events: none; z-index: 0; }
+  
+  /* Nav Styling */
+  nav { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 24px; padding: 0 40px; height: 64px; background: #0a0f1eee; backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+  .nav-logo { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--teal); text-decoration: none; white-space: nowrap; }
+  .nav-search { flex: 1; max-width: 560px; display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+  .nav-search:focus-within { border-color: var(--teal); box-shadow: var(--teal-glow); }
+  .nav-search select { background:transparent; border:none; color:var(--teal); font-family:'Inter',sans-serif; font-weight:600; font-size:0.85rem; outline:none; cursor:pointer; padding-left:14px; }
+  .nav-search select option { background: var(--card); }
+  .nav-search input { flex: 1; background: none; border: none; outline: none; padding: 10px 0; padding-left: 10px; border-left: 1px solid var(--border); font-size: 0.92rem; color: var(--text); font-family: 'Inter', sans-serif; }
+  .nav-search button { background: var(--teal); border: none; padding: 0 20px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.82rem; color: var(--navy); }
+  .nav-links { margin-left: auto; display: flex; gap: 24px; align-items: center; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+  
+  /* Layout & Cards */
+  .page { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; padding: 40px 24px; }
+  .results-header { margin-bottom: 24px; font-size: 0.88rem; color: var(--muted); }
+  .results-header strong { color: var(--text); }
+  .query-highlight { color: var(--teal); font-weight: 700; }
+  
+  .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; margin-bottom: 16px; text-decoration: none; color: inherit; display: block; transition: all 0.2s; position: relative; overflow: hidden; animation: fadeIn 0.3s ease both; }
+  .result-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--teal); opacity: 0; transition: opacity 0.2s; }
+  .result-card:hover { border-color: #00d4b450; transform: translateX(4px); box-shadow: 0 8px 32px #00000030; }
+  .result-card:hover::before { opacity: 1; }
+  
+  .author-icon { display:inline-flex; align-items:center; justify-content:center; width: 40px; height: 40px; border-radius: 50%; background: var(--teal-dim); color: var(--teal); font-weight: 800; font-size: 1.2rem; margin-right: 16px; border: 1px solid #00d4b430; }
+  .result-title { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; margin-bottom: 16px; }
+  .result-meta { display: flex; align-items: center; gap: 20px; }
+  .meta-pill { font-size: 0.85rem; color: var(--muted); }
+  .cite-pill { margin-left: auto; background: var(--teal-dim); border: 1px solid #00d4b430; border-radius: 100px; padding: 4px 14px; font-size: 0.8rem; color: var(--teal); font-weight: 600; }
+  
+  .no-results { text-align: center; padding: 80px 24px; color: var(--muted); }
+  .no-results h2 { font-size: 1.5rem; margin-bottom: 12px; color: var(--text); }
+  
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">Research Portal</a>
+  <form class="nav-search" action="/search_authors" method="GET" id="navSearchForm">
+    <select id="navSearchType" onchange="updateNavSearchAction()">
+      <option value="authors">Authors</option>
+      <option value="papers">Papers</option>
+    </select>
+    <input name="q" type="text" value="{{ query }}" placeholder="Search authors..." autocomplete="off"/>
+    <button type="submit">Go</button>
+  </form>
+  <div class="nav-links">
+    <a href="/analytics">Analytics</a>
+    {% if session.get('username') %}
+      <a href="/profile">{{ session.username }}</a>
+      <a href="/logout">Logout</a>
+    {% else %}
+      <a href="/login">Login</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="page">
+  <div class="results-header">
+    <strong>{{ results|length }}</strong> authors found for <span class="query-highlight">"{{ query }}"</span>
+  </div>
+
+  {% if results %}
+    {% for author in results %}
+    <a class="result-card" href="/author/{{ author.author_id }}">
+      <div class="result-title">
+        <div class="author-icon">{{ author.name[0].upper() }}</div>
+        {{ author.name }}
+      </div>
+      <div class="result-meta">
+        <div class="meta-pill">Publications: <strong>{{ author.total_papers }}</strong></div>
+        <div class="cite-pill">↑ {{ author.total_citations }} Total Citations</div>
+      </div>
+    </a>
+    {% endfor %}
+  {% else %}
+    <div class="no-results">
+      <h2>No authors found</h2>
+      <p>Check the spelling or try searching for papers instead.</p>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function updateNavSearchAction() {
+  const type = document.getElementById('navSearchType').value;
+  document.getElementById('navSearchForm').action = type === 'authors' ? '/search_authors' : '/search';
+}
+</script>
+</body>
+</html>

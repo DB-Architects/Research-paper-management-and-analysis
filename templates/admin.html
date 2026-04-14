@@ -1,37 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin Dashboard — Nexus</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard — Nexus{% endblock %}
+
+{% block extra_css %}
 <style>
-  :root {
-    --navy:    #0a0f1e; --navy3:   #111e38; --card:    #0f1c35; --border:  #1a2d50;
-    --teal:    #00d4b4; --teal2:   #00b89a; --teal-dim:#00d4b420;
-    --amber:   #f59e0b; --amber-dim:#f59e0b18;
-    --text:    #e8eef8; --muted:   #6b82a8; --error:   #ff6b6b;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--navy); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
-  nav {
-    position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 24px;
-    padding: 0 40px; height: 64px; background: #0a0f1eee; border-bottom: 1px solid var(--border);
-  }
-  .nav-logo { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--text); text-decoration: none; }
-  .nav-links { margin-left: auto; display: flex; gap: 24px; align-items: center; }
-  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
-  .nav-links a:hover { color: var(--text); }
-  
-  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 40px 24px; position: relative; z-index: 1;}
   .header { margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
   .header h1 { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 2rem; color: var(--teal); }
   
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; }
+  @media (max-width: 1100px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
   
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column;}
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; height: 700px;}
   .card h2 { font-size: 1.2rem; margin-bottom: 16px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center;}
   
   .search-bar {
@@ -41,10 +22,7 @@
   }
   .search-bar:focus { border-color: var(--teal); }
 
-  .list-container { overflow-y: auto; max-height: 600px; padding-right: 10px; }
-  .list-container::-webkit-scrollbar { width: 6px; }
-  .list-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
+  .list-container { overflow-y: auto; flex: 1; padding-right: 10px; }
   .list-item { 
     display: flex; justify-content: space-between; align-items: center; 
     padding: 12px 0; border-bottom: 1px solid var(--border); 
@@ -59,31 +37,23 @@
     transition: all 0.2s;
   }
   .del-btn:hover { border-color: var(--error); color: var(--error); }
+  .save-btn { border-color: var(--teal); color: var(--teal); }
+  .save-btn:hover { background: var(--teal-dim); border-color: var(--teal); color: var(--teal); }
   
-  .role-badge { 
-    background: var(--navy3); border: 1px solid var(--border); border-radius: 100px; 
-    padding: 2px 8px; font-size: 0.7rem; color: var(--teal);
-  }
-  .tf-badge {
-    background: var(--amber-dim); border: 1px solid #f59e0b40; border-radius: 100px; 
-    padding: 2px 8px; font-size: 0.7rem; color: var(--amber); font-weight: 700;
-  }
+  .role-badge { background: var(--navy3); border: 1px solid var(--border); border-radius: 100px; padding: 2px 8px; font-size: 0.7rem; color: var(--teal); }
+  .tf-badge { background: var(--amber-dim); border: 1px solid #f59e0b40; border-radius: 100px; padding: 2px 8px; font-size: 0.7rem; color: var(--amber); font-weight: 700; }
+
+  .edit-panel { display: none; background: var(--navy3); padding: 12px; border-radius: 8px; margin-top: 10px; gap: 10px; align-items: center; border: 1px solid var(--border);}
+  .edit-input, .edit-select { background: var(--navy); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; outline: none;}
+  .edit-input:focus, .edit-select:focus { border-color: var(--teal); }
 </style>
-</head>
-<body>
+{% endblock %}
 
-<nav>
-  <a class="nav-logo" href="/">Research Portal</a>
-  <div class="nav-links">
-    <a href="/profile">Back to Profile</a>
-    <a href="/logout">Logout</a>
-  </div>
-</nav>
-
+{% block content %}
 <div class="page">
   <div class="header">
     <h1>Admin Dashboard</h1>
-    <p style="color: var(--muted); font-size: 0.9rem;">Manage platform users, monitor trust factors, and moderate papers.</p>
+    <p style="color: var(--muted); font-size: 0.9rem;">Manage platform users, standardize venues, and moderate database papers.</p>
   </div>
 
   <div class="grid">
@@ -91,20 +61,56 @@
       <h2>Registered Users</h2>
       <div class="list-container" id="user-list">
         {% for u in users %}
-        <div class="list-item" id="user-{{ u.user_id }}">
-          <div>
-            <div class="item-title">
-              {{ u.username }} 
-              <span class="role-badge">{{ u.role }}</span>
-              <span class="tf-badge">TF: {{ u.trust_factor }}/10</span>
+        <div class="list-item" id="user-{{ u.user_id }}" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div class="item-title">
+                {{ u.username }} 
+                <span class="role-badge" id="role-badge-{{ u.user_id }}">{{ u.role }}</span>
+                <span class="tf-badge" id="tf-badge-{{ u.user_id }}">TF: {{ u.trust_factor }}/10</span>
+              </div>
+              <div class="item-meta">{{ u.institute or 'No Institute' }}</div>
             </div>
-            <div class="item-meta">{{ u.institute or 'No Institute' }}</div>
+            {% if u.user_id != session.user_id %}
+            <div style="display: flex; gap: 8px;">
+              <button class="del-btn" onclick="toggleEditPanel('edit-user-{{ u.user_id }}')">Edit</button>
+              <button class="del-btn" onclick="deleteUser({{ u.user_id }})">Ban</button>
+            </div>
+            {% else %}
+            <span style="font-size: 0.8rem; color: var(--muted);">You</span>
+            {% endif %}
           </div>
-          {% if u.user_id != session.user_id %}
-          <button class="del-btn" onclick="deleteUser({{ u.user_id }})">Ban User</button>
-          {% else %}
-          <span style="font-size: 0.8rem; color: var(--muted);">You</span>
-          {% endif %}
+          
+          <div class="edit-panel" id="edit-user-{{ u.user_id }}">
+            <select id="role-input-{{ u.user_id }}" class="edit-select">
+              <option value="user" {% if u.role == 'user' %}selected{% endif %}>User</option>
+              <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+            <span style="font-size: 0.8rem; color: var(--muted);">TF:</span>
+            <input type="number" id="tf-input-{{ u.user_id }}" value="{{ u.trust_factor }}" step="0.1" min="1" max="10" class="edit-input" style="width: 70px;">
+            <button class="del-btn save-btn" onclick="updateUser({{ u.user_id }})" style="margin-left: auto;">Save</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Venue Standardization</h2>
+      <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px;">Updates cascade to all associated papers.</p>
+      <div class="list-container">
+        {% for v in venues %}
+        <div class="list-item" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <input type="text" id="vname-{{ v.venue_id }}" value="{{ v.venue_name }}" class="edit-input" style="flex: 1;">
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: space-between; align-items: center;">
+            <select id="vtype-{{ v.venue_id }}" class="edit-select">
+              <option value="C" {% if v.venue_type == 'C' %}selected{% endif %}>Conference</option>
+              <option value="J" {% if v.venue_type == 'J' %}selected{% endif %}>Journal</option>
+            </select>
+            <button class="del-btn save-btn" onclick="updateVenue({{ v.venue_id }})">Update Venue</button>
+          </div>
         </div>
         {% endfor %}
       </div>
@@ -115,14 +121,12 @@
         Database Papers
         <span style="font-size: 0.8rem; color: var(--muted); font-weight: 400;" id="paper-count">Showing latest 100</span>
       </h2>
-      
       <input type="text" id="paper-search" class="search-bar" placeholder="Search papers by title to delete..." onkeyup="searchAdminPapers()">
-      
       <div class="list-container" id="paper-list">
         {% for p in papers %}
         <div class="list-item" id="paper-{{ p.paper_id }}">
           <div>
-            <div class="item-title">{{ p.title[:55] }}...</div>
+            <div class="item-title">{{ p.title[:45] }}...</div>
             <div class="item-meta">ID: {{ p.paper_id }} | Year: {{ p.publication_year }}</div>
           </div>
           <button class="del-btn" onclick="deletePaper({{ p.paper_id }})">Delete</button>
@@ -130,10 +134,55 @@
         {% endfor %}
       </div>
     </div>
+    
   </div>
 </div>
+{% endblock %}
 
-<script>
+{% block extra_js %}
+function toggleEditPanel(panelId) {
+  const panel = document.getElementById(panelId);
+  panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+}
+
+async function updateUser(uid) {
+  const newRole = document.getElementById(`role-input-${uid}`).value;
+  const newTf = document.getElementById(`tf-input-${uid}`).value;
+  
+  const res = await fetch(`/admin/update-user/${uid}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: newRole, trust_factor: newTf })
+  });
+  
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById(`role-badge-${uid}`).textContent = newRole;
+    document.getElementById(`tf-badge-${uid}`).textContent = `TF: ${parseFloat(newTf).toFixed(1)}/10`;
+    toggleEditPanel(`edit-user-${uid}`);
+  } else {
+    alert("Error updating user: " + data.error);
+  }
+}
+
+async function updateVenue(vid) {
+  const newName = document.getElementById(`vname-${vid}`).value;
+  const newType = document.getElementById(`vtype-${vid}`).value;
+  
+  const res = await fetch(`/admin/update-venue/${vid}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ venue_name: newName, venue_type: newType })
+  });
+  
+  const data = await res.json();
+  if (data.success) {
+    alert("Venue updated successfully. All associated papers will reflect this change.");
+  } else {
+    alert("Error updating venue: " + data.error);
+  }
+}
+
 async function deleteUser(id) {
   if (!confirm('Are you sure? This will delete the user and all papers they uploaded.')) return;
   const res = await fetch('/admin/delete-user/' + id, { method: 'POST' });
@@ -156,19 +205,16 @@ async function deletePaper(id) {
   } else alert(data.error);
 }
 
-// LIVE SEARCH LOGIC
 let searchTimeout = null;
 async function searchAdminPapers() {
   clearTimeout(searchTimeout);
   const query = document.getElementById('paper-search').value;
   
-  // Wait 300ms after user stops typing before hitting the database
   searchTimeout = setTimeout(async () => {
     const res = await fetch('/admin/search-papers?q=' + encodeURIComponent(query));
     const data = await res.json();
-    
     const list = document.getElementById('paper-list');
-    list.innerHTML = ''; // Clear current list
+    list.innerHTML = ''; 
     
     if (data.papers.length === 0) {
       list.innerHTML = '<div style="padding: 20px; color: var(--muted); text-align: center;">No papers found.</div>';
@@ -177,9 +223,8 @@ async function searchAdminPapers() {
     }
 
     document.getElementById('paper-count').textContent = data.papers.length + (query ? " results" : " latest");
-
     data.papers.forEach(p => {
-      const titleShort = p.title.length > 55 ? p.title.substring(0, 55) + '...' : p.title;
+      const titleShort = p.title.length > 45 ? p.title.substring(0, 45) + '...' : p.title;
       list.innerHTML += `
         <div class="list-item" id="paper-${p.paper_id}">
           <div>
@@ -192,7 +237,4 @@ async function searchAdminPapers() {
     });
   }, 300);
 }
-</script>
-
-</body>
-</html>
+{% endblock %}

@@ -393,12 +393,71 @@ def logout():
 def admin_dashboard():
     conn = get_db()
     cur = conn.cursor()
+    
     cur.execute("SELECT user_id, username, role, institute, trust_factor FROM Users ORDER BY user_id DESC")
     users = cur.fetchall()
+    
     cur.execute("SELECT paper_id, title, publication_year FROM Papers ORDER BY uploaded_at DESC NULLS LAST LIMIT 100")
     papers = cur.fetchall()
+    
+    # NEW: Fetch venues for the venue management card
+    cur.execute("SELECT venue_id, venue_name, venue_type FROM Venues ORDER BY venue_id DESC LIMIT 100")
+    venues = cur.fetchall()
+    
     cur.close(); conn.close()
-    return render_template("admin.html", users=users, papers=papers)
+    return render_template("admin.html", users=users, papers=papers, venues=venues)
+
+@app.route("/admin/update-user/<int:uid>", methods=["POST"])
+@admin_required
+def admin_update_user(uid):
+    data = request.get_json()
+    new_role = data.get("role")
+    new_tf = data.get("trust_factor")
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # ADVANCED DBMS: Modifying user constraints and privileges
+        cur.execute("""
+            UPDATE Users 
+            SET role = %s, trust_factor = %s 
+            WHERE user_id = %s
+        """, (new_role, new_tf, uid))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
+
+@app.route("/admin/update-venue/<int:vid>", methods=["POST"])
+@admin_required
+def admin_update_venue(vid):
+    data = request.get_json()
+    new_name = data.get("venue_name").strip()
+    new_type = data.get("venue_type")
+    
+    if not new_name:
+        return jsonify({"success": False, "error": "Venue name cannot be empty"})
+        
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # ADVANCED DBMS: Normalization in action. Updating the parent entity 
+        # instantly reflects on all child records (Papers) tying to this venue_id.
+        cur.execute("""
+            UPDATE Venues 
+            SET venue_name = %s, venue_type = %s 
+            WHERE venue_id = %s
+        """, (new_name, new_type, vid))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
 
 @app.route("/admin/search-papers")
 @admin_required

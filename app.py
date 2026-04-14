@@ -178,20 +178,58 @@ def paper_detail(paper_id):
     has_rated = False
     is_bookmarked = False
     if "user_id" in session and session.get("role") != "admin":
-        # Check if the user has already rated this specific paper
         cur.execute("SELECT 1 FROM Paper_Ratings WHERE user_id = %s AND paper_id = %s", (session["user_id"], paper_id))
-        if cur.fetchone():
-            has_rated = True
-
-    # Check if the user has bookmarked this paper
+        if cur.fetchone(): has_rated = True
+            
         cur.execute("SELECT 1 FROM Bookmarks WHERE user_id = %s AND paper_id = %s", (session["user_id"], paper_id))
-        if cur.fetchone():
-            is_bookmarked = True
-        # Log reading history
+        if cur.fetchone(): is_bookmarked = True
+
         cur.execute("INSERT INTO Reading_History (user_id, paper_id, viewed_at) VALUES (%s, %s, NOW())", 
                     (session["user_id"], paper_id))
-        
         conn.commit()
+
+# --- ADVANCED DBMS: Recursive CTE + Window Functions ---
+    # Finds papers citing this paper, partitioned to show:
+    # Max 10 Level 1, Max 5 Level 2, Max 2 Level 3
+    cur.execute("""
+        WITH RECURSIVE CitationGraph AS (
+            -- Base Case: Direct Citations (Depth 1)
+            SELECT c.citing_paper_id AS paper_id, 1 AS depth
+            FROM Citations c
+            WHERE c.cited_paper_id = %s
+            
+            UNION ALL
+            
+            -- Recursive Step: Multi-hop Citations (Depth 2 & 3)
+            SELECT c.citing_paper_id, cg.depth + 1
+            FROM Citations c
+            INNER JOIN CitationGraph cg ON c.cited_paper_id = cg.paper_id
+            WHERE cg.depth < 3
+        ),
+        RankedCitations AS (
+            -- Group to find the shortest path (MIN depth) if a paper appears multiple times
+            SELECT 
+                p.paper_id, p.title, p.publication_year, p.n_citations,
+                MIN(cg.depth) as depth
+            FROM CitationGraph cg
+            JOIN Papers p ON cg.paper_id = p.paper_id
+            GROUP BY p.paper_id, p.title, p.publication_year, p.n_citations
+        ),
+        PartitionedCitations AS (
+            -- Use Window Functions to number the rows WITHIN each depth level
+            SELECT *,
+                   ROW_NUMBER() OVER(PARTITION BY depth ORDER BY n_citations DESC) as row_num
+            FROM RankedCitations
+        )
+        -- Finally, filter based on your exact distribution requirements
+        SELECT paper_id, title, publication_year, depth
+        FROM PartitionedCitations
+        WHERE (depth = 1 AND row_num <= 10)
+           OR (depth = 2 AND row_num <= 5)
+           OR (depth = 3 AND row_num <= 2)
+        ORDER BY depth ASC, n_citations DESC;
+    """, (paper_id,))
+    citation_tree = cur.fetchall()
 
     cur.close(); conn.close()
 
@@ -200,7 +238,8 @@ def paper_detail(paper_id):
 
     return render_template("paper.html", paper=paper, authors=authors,
                            scholar_url=scholar_url, arxiv_url=arxiv_url, 
-                           has_rated=has_rated, is_bookmarked=is_bookmarked)
+                           has_rated=has_rated, is_bookmarked=is_bookmarked,
+                           citation_tree=citation_tree)
 
 @app.route("/for-you")
 @login_required

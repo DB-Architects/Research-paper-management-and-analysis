@@ -377,17 +377,28 @@
 
   <aside class="sidebar">
     <div class="sidebar-card">
-      <div class="sidebar-title">Quick Info</div>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div style="font-size:0.8rem">
-          <div style="color:var(--muted);margin-bottom:3px">Venue</div>
-          <div style="font-weight:500">{{ paper.venue_name[:50] }}</div>
+      <div class="sidebar-title">Citation Network</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Multi-hop citation graph (Up to 3 levels deep)</div>
+      
+      {% if citation_tree %}
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          {% for node in citation_tree %}
+          <a href="/paper/{{ node.paper_id }}" style="text-decoration:none; color:inherit; display:block; padding-left: {{ (node.depth - 1) * 12 }}px; border-left: 2px solid {% if node.depth == 1 %}var(--teal){% elif node.depth == 2 %}var(--amber){% else %}var(--muted){% endif %}; padding-left: 10px;">
+            <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">
+              Level {{ node.depth }} Hop
+            </div>
+            <div style="font-size:0.85rem; font-weight:600; line-height:1.3; margin-top:2px;">
+              {{ node.title[:60] }}...
+            </div>
+            <div style="font-size:0.75rem; color:var(--muted2); margin-top:4px;">
+              Published: {{ node.publication_year }}
+            </div>
+          </a>
+          {% endfor %}
         </div>
-        <div style="font-size:0.8rem">
-          <div style="color:var(--muted);margin-bottom:3px">Type</div>
-          <div style="font-weight:500">{{ paper.venue_type == 'J' and 'Journal' or 'Conference' }}</div>
-        </div>
-      </div>
+      {% else %}
+        <div style="font-size:0.8rem; color:var(--muted);">No descending citations found in the database.</div>
+      {% endif %}
     </div>
   </aside>
 </div>

@@ -7,8 +7,8 @@ FILTERED_DATA_FILE = "dblp_filtered.jsonl"
 
 DB_PARAMS = {
     "dbname": "dblp_project",
-    "user": "postgres",
-    "password": "praty", # Change ts gng🥀
+    "user": "siddharthkonnur",
+    "password": "", # Change ts gng🥀
     "host": "localhost",
     "port": "5432"
 }

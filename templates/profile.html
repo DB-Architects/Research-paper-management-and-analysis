@@ -3,10 +3,10 @@
 {% block title %}{{ session.username }} — Profile{% endblock %}
 
 {% block extra_css %}
-  /* ── PAGE ── */
-  .page {
+.page {
     position: relative; z-index: 1;
-    max-width: 1100px; margin: 0 auto; padding: 40px 24px;
+    max-width: 1350px; /* INCREASED from 1100px to give the tabs room to breathe */
+    margin: 0 auto; padding: 40px 24px;
     display: grid; grid-template-columns: 260px 1fr; gap: 32px;
   }
   @media (max-width: 900px) {
@@ -89,11 +89,18 @@
     display: flex; gap: 4px; background: var(--navy3);
     border-radius: 12px; padding: 4px; margin-bottom: 24px;
     animation: fadeUp 0.4s 0.05s ease both;
+    overflow-x: auto; /* Allow horizontal scrolling on small screens */
   }
+  
+  /* Make the tab scrollbar very thin and elegant */
+  .tabs::-webkit-scrollbar { height: 4px; }
+  .tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
   .tab {
-    flex: 1; padding: 10px; border-radius: 9px; border: none; background: none;
+    flex: 1; padding: 10px 16px; border-radius: 9px; border: none; background: none;
     font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
     color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center;
+    white-space: nowrap; /* CRITICAL FIX: Forces text to stay on a single line */
   }
   .tab.active { background: var(--card); color: var(--text); border: 1px solid var(--border); }
   .tab-content { display: none; }
@@ -242,6 +249,12 @@
       <button class="tab" onclick="switchTab('folders', this)">
         Folders ({{ collections|length }})
       </button>
+      <button class="tab" onclick="switchTab('notes', this)">
+        My Notes ({{ my_notes|length }})
+      </button>
+      <button class="tab" onclick="switchTab('settings', this)">
+        ⚙️ Settings
+      </button>
     </div>
 
     <div class="tab-content active" id="tab-history">
@@ -389,7 +402,7 @@
       {% else %}
         <div class="empty">
           <h3>No searches yet</h3>
-          <p>Your search history builds automatically as you use Nexus.<br/>
+          <p>Your search history builds automatically as you use Research Portal.<br/>
           <a href="/">Try searching for a topic →</a></p>
         </div>
       {% endif %}
@@ -444,6 +457,85 @@
           <a href="/add-paper">Upload a paper →</a>
         </div>
       {% endif %}
+    </div>
+
+    <div class="tab-content" id="tab-notes">
+      {% if my_notes %}
+        <div style="display: grid; gap: 16px;">
+        {% for note in my_notes %}
+          <div class="paper-item" style="flex-direction: column; align-items: stretch; cursor: default;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+              <a href="/paper/{{ note.paper_id }}" style="text-decoration: none; color: inherit; flex: 1;">
+                <div class="paper-item-title" style="margin-bottom: 4px; font-size: 1rem;">{{ note.title }}</div>
+                <div class="time-chip" style="margin-left: 0;">Last updated: {{ note.last_updated.strftime('%b %d, %Y') }}</div>
+              </a>
+              <a href="/paper/{{ note.paper_id }}#private-note" class="del-btn" style="text-decoration: none; color: var(--teal); border-color: #00d4b450;">
+                Edit Note
+              </a>
+            </div>
+
+            <div style="background: var(--navy); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 0.9rem; color: var(--text); line-height: 1.6; position: relative;">
+              <div style="position: absolute; top: -10px; left: 16px; background: var(--card); padding: 0 8px; font-size: 0.7rem; color: var(--amber); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                Annotation
+              </div>
+              {% if note.note_text|length > 250 %}
+                {{ note.note_text[:250] }}... <span style="color: var(--teal); font-weight: 500;">(Truncated)</span>
+              {% else %}
+                {{ note.note_text }}
+              {% endif %}
+            </div>
+
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">
+          <h3>No private notes yet</h3>
+          <p>You can add private annotations to any research paper to save your key takeaways.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="tab-content" id="tab-settings">
+      <div class="folder-card" style="margin-bottom: 24px;">
+        <div class="folder-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+          <div class="folder-name">Update Profile Details</div>
+        </div>
+        <div style="display: grid; gap: 16px; max-width: 400px;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: block;">Institute / University</label>
+            <input type="text" id="set-institute" value="{{ user.institute or '' }}" style="width: 100%; background: var(--navy); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; outline: none; font-family: 'Inter', sans-serif;">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div>
+              <label style="font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: block;">Age</label>
+              <input type="number" id="set-age" value="{{ user.age or '' }}" style="width: 100%; background: var(--navy); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; outline: none; font-family: 'Inter', sans-serif;">
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: block;">Gender</label>
+              <select id="set-gender" style="width: 100%; background: var(--navy); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; outline: none; font-family: 'Inter', sans-serif;">
+                <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
+          <button class="upload-btn" onclick="updateSettings()" style="margin-top: 8px;">Save Changes</button>
+        </div>
+      </div>
+
+      <div class="folder-card" style="border-color: #ff6b6b40;">
+        <div class="folder-header" style="border-bottom: 1px solid #ff6b6b40; padding-bottom: 16px; margin-bottom: 16px;">
+          <div class="folder-name" style="color: #ff6b6b;">Danger Zone</div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 16px;">
+          Permanently delete your account. This will erase all your history, bookmarks, notes, folders, and any research papers you have uploaded to the database. This action cannot be undone.
+        </p>
+        <button class="del-btn" style="border-color: #ff6b6b; color: #ff6b6b; padding: 10px 20px;" onclick="deleteMyAccount()">
+          Delete My Account
+        </button>
+      </div>
     </div>
 
   </main>
@@ -588,7 +680,7 @@ async function removeHistoryItem(type, identifier, el) {
           parent.innerHTML = '<div class="empty"><h3>No reading history yet</h3><p>Start exploring papers and they\'ll appear here.<br/><a href="/">Browse trending papers →</a></p></div>';
         } else {
           document.getElementById('search-header').style.display = 'none';
-          parent.innerHTML = '<div class="empty"><h3>No searches yet</h3><p>Your search history builds automatically as you use Nexus.<br/><a href="/">Try searching for a topic →</a></p></div>';
+          parent.innerHTML = '<div class="empty"><h3>No searches yet</h3><p>Your search history builds automatically as you use Research Portal.<br/><a href="/">Try searching for a topic →</a></p></div>';
         }
       }
     }, 300);
@@ -626,11 +718,45 @@ async function clearAllHistory(type) {
       if (type === 'reading') {
         container.innerHTML = '<div class="empty"><h3>No reading history yet</h3><p>Start exploring papers and they\'ll appear here.<br/><a href="/">Browse trending papers →</a></p></div>';
       } else {
-        container.innerHTML = '<div class="empty"><h3>No searches yet</h3><p>Your search history builds automatically as you use Nexus.<br/><a href="/">Try searching for a topic →</a></p></div>';
+        container.innerHTML = '<div class="empty"><h3>No searches yet</h3><p>Your search history builds automatically as you use Research Portal.<br/><a href="/">Try searching for a topic →</a></p></div>';
       }
     }, 300);
   } else {
     alert("Error clearing history: " + data.error);
   }
 }
+
+async function updateSettings() {
+  const institute = document.getElementById('set-institute').value;
+  const age = document.getElementById('set-age').value;
+  const gender = document.getElementById('set-gender').value;
+
+  const res = await fetch('/api/user/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ institute, age, gender })
+  });
+  
+  const data = await res.json();
+  if (data.success) {
+    alert("Profile updated successfully!");
+    window.location.reload();
+  } else {
+    alert("Error updating profile: " + data.error);
+  }
+}
+
+async function deleteMyAccount() {
+  if (!confirm("WARNING: Are you absolutely sure you want to delete your account? All your data and uploaded papers will be permanently wiped.")) return;
+  
+  const res = await fetch('/api/user/delete_account', { method: 'DELETE' });
+  const data = await res.json();
+  
+  if (data.success) {
+    window.location.href = '/';
+  } else {
+    alert("Error deleting account: " + data.error);
+  }
+}
+
 {% endblock %}

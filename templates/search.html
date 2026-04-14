@@ -142,13 +142,17 @@
   <aside class="sidebar">
     <div class="sidebar-box">
       <div class="sidebar-title">Sort By</div>
+      <a class="sort-option {{ 'active' if sort == 'semantic' }}"
+         href="/search?q={{ query }}&sort=semantic">
+         Semantic AI (By Meaning)
+      </a>
       <a class="sort-option {{ 'active' if sort == 'relevance' }}"
          href="/search?q={{ query }}&sort=relevance">
-        ✦ Relevance
+         Keyword Match
       </a>
       <a class="sort-option {{ 'active' if sort == 'citations' }}"
          href="/search?q={{ query }}&sort=citations">
-        ↑ Most Cited
+         Most Cited
       </a>
       <a class="sort-option {{ 'active' if sort == 'year' }}"
          href="/search?q={{ query }}&sort=year">

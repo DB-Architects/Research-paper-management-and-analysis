@@ -6,18 +6,18 @@ from psycopg2.extras import execute_values
 # --- CONFIG ---
 DB_PARAMS = {
     "dbname": "dblp_project",
-    "user": "postgres",
-    "password": "postgres",   # your WSL postgres password
+    "user": "siddharthkonnur",
+    "password": "",   # your WSL postgres password
     "host": "localhost",
     "port": "5432"
 }
 
-BATCH_SIZE = 512        # papers per batch
-LIMIT = 10000           # how many papers to embed (start small, increase later)
+BATCH_SIZE = 512 # papers per batch
+LIMIT = 100000 
 
 def generate_embeddings():
     print("Loading model... (first time downloads ~90MB)")
-    model = SentenceTransformer('all-MiniLM-L6-v2')  # fast, 384-dim, great quality
+    model = SentenceTransformer('BAAI/bge-small-en-v1.5', device='mps')
     print("Model loaded!")
 
     conn = psycopg2.connect(**DB_PARAMS)

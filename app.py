@@ -37,7 +37,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # --- UNCOMMENT FOR FINAL PRODUCTION ---
 print("Loading SentenceTransformer model...")
-embedder = SentenceTransformer('all-MiniLM-L6-v2')
+embedder = SentenceTransformer('BAAI/bge-small-en-v1.5', device='mps')
 print("Model loaded successfully!")
 
 def get_db():
@@ -106,47 +106,79 @@ def search():
     if not query:
         return redirect(url_for("index"))
 
-    # Log search history (Skip if it's the admin)
+    # Log search history
     if "user_id" in session and session.get("role") != "admin":
         try:
             conn_log = get_db()
             cur_log = conn_log.cursor()
-            cur_log.execute("""
-                INSERT INTO Search_History (user_id, query, searched_at)
-                VALUES (%s, %s, NOW())
-            """, (session["user_id"], query))
+            cur_log.execute("INSERT INTO Search_History (user_id, query, searched_at) VALUES (%s, %s, NOW())", (session["user_id"], query))
             conn_log.commit()
             cur_log.close(); conn_log.close()
-        except Exception:
-            pass
+        except Exception: pass
 
     conn = get_db()
     cur = conn.cursor()
 
-    order = "relevance_score DESC, p.n_citations DESC"
-    if sort == "citations": order = "p.n_citations DESC"
-    elif sort == "year": order = "p.publication_year DESC"
+    if sort == "relevance" or sort == "semantic":
+        # --- ADVANCED DBMS+ML: Hybrid Search with Reciprocal Rank Fusion (RRF) ---
+        query_vector = embedder.encode(query).tolist()
+        
+        cur.execute("""
+            WITH semantic_search AS (
+                -- 1. Get top 100 semantic matches
+                SELECT p.paper_id,
+                       ROW_NUMBER() OVER (ORDER BY pe.embedding <=> %s::vector) AS rank
+                FROM Papers p
+                JOIN Paper_Embeddings pe ON p.paper_id = pe.paper_id
+                ORDER BY pe.embedding <=> %s::vector
+                LIMIT 100
+            ),
+            keyword_search AS (
+                -- 2. Get top 100 keyword matches
+                SELECT p.paper_id,
+                       ROW_NUMBER() OVER (ORDER BY ts_rank(to_tsvector('english', p.title || ' ' || p.abstract_text), plainto_tsquery('english', %s)) DESC) AS rank
+                FROM Papers p
+                WHERE to_tsvector('english', p.title || ' ' || p.abstract_text) @@ plainto_tsquery('english', %s)
+                ORDER BY rank
+                LIMIT 100
+            )
+            -- 3. Fuse the ranks using the RRF Formula: 1 / (k + rank) where k=60
+            SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name,
+                   COALESCE(1.0 / (60 + s.rank), 0.0) + COALESCE(1.0 / (60 + k.rank), 0.0) AS relevance_score,
+                   LEFT(p.abstract_text, 200) AS snippet
+            FROM Papers p
+            LEFT JOIN semantic_search s ON p.paper_id = s.paper_id
+            LEFT JOIN keyword_search k ON p.paper_id = k.paper_id
+            JOIN Venues v ON p.venue_id = v.venue_id
+            WHERE s.paper_id IS NOT NULL OR k.paper_id IS NOT NULL
+            ORDER BY relevance_score DESC
+            LIMIT %s OFFSET %s
+        """, (query_vector, query_vector, query, query, per_page, offset))
+        
+        results = cur.fetchall()
+        total = 200 # Cap pagination for Hybrid search since it blends two top-100 lists
+        
+    else:
+        # --- Standard Keyword Searching for specific sorts (Year/Citations) ---
+        order = "p.n_citations DESC" if sort == "citations" else "p.publication_year DESC"
 
-    cur.execute(f"""
-        SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name,
-               ts_rank(to_tsvector('english', p.title || ' ' || p.abstract_text),
-                       plainto_tsquery('english', %s)) AS relevance_score,
-               LEFT(p.abstract_text, 200) AS snippet
-        FROM Papers p JOIN Venues v ON p.venue_id = v.venue_id
-        WHERE to_tsvector('english', p.title || ' ' || p.abstract_text)
-              @@ plainto_tsquery('english', %s)
-        ORDER BY {order} LIMIT %s OFFSET %s
-    """, (query, query, per_page, offset))
-    results = cur.fetchall()
+        cur.execute(f"""
+            SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name,
+                   ts_rank(to_tsvector('english', p.title || ' ' || p.abstract_text),
+                           plainto_tsquery('english', %s)) AS relevance_score,
+                   LEFT(p.abstract_text, 200) AS snippet
+            FROM Papers p JOIN Venues v ON p.venue_id = v.venue_id
+            WHERE to_tsvector('english', p.title || ' ' || p.abstract_text)
+                  @@ plainto_tsquery('english', %s)
+            ORDER BY {order} LIMIT %s OFFSET %s
+        """, (query, query, per_page, offset))
+        results = cur.fetchall()
 
-    cur.execute("""
-        SELECT COUNT(*) AS cnt FROM Papers p
-        WHERE to_tsvector('english', p.title || ' ' || p.abstract_text)
-              @@ plainto_tsquery('english', %s)
-    """, (query,))
-    total = cur.fetchone()["cnt"]
+        cur.execute("SELECT COUNT(*) AS cnt FROM Papers p WHERE to_tsvector('english', p.title || ' ' || p.abstract_text) @@ plainto_tsquery('english', %s)", (query,))
+        total = cur.fetchone()["cnt"]
 
     cur.close(); conn.close()
+    
     return render_template("search.html", query=query, results=results, total=total,
                            page=page, per_page=per_page, sort=sort,
                            total_pages=(total + per_page - 1) // per_page)
@@ -237,15 +269,41 @@ def paper_detail(paper_id):
     """, (paper_id,))
     citation_tree = cur.fetchall()
 
+    # --- ADVANCED DBMS + ML: Vector Similarity Search ---
+    # Find top 5 mathematically similar papers using pgvector's Cosine Distance (<=>)
+    cur.execute("""
+        WITH SemanticCandidates AS (
+            SELECT p.paper_id, p.title, p.publication_year, v.venue_name, p.n_citations,
+                   (1 - (pe.embedding <=> target.embedding))::numeric AS similarity_score
+            FROM Papers p
+            JOIN Paper_Embeddings pe ON p.paper_id = pe.paper_id
+            JOIN Venues v ON p.venue_id = v.venue_id
+            CROSS JOIN (SELECT embedding FROM Paper_Embeddings WHERE paper_id = %s) AS target
+            WHERE p.paper_id != %s AND target.embedding IS NOT NULL
+            ORDER BY pe.embedding <=> target.embedding
+            LIMIT 50
+        )
+        SELECT paper_id, title, publication_year, venue_name, n_citations, similarity_score,
+               -- Custom Ranking Algorithm: 70% Semantic Match + 30% Citation Weight (capped at 1000 cites to prevent domination)
+               ROUND((similarity_score * 0.7) + (LEAST(n_citations, 1000) / 1000.0 * 0.3), 3) AS hybrid_score
+        FROM SemanticCandidates
+        ORDER BY hybrid_score DESC
+        LIMIT 5;
+    """, (paper_id, paper_id))
+    
+    similar_papers = cur.fetchall()
+
+
     cur.close(); conn.close()
 
     scholar_url = f"https://scholar.google.com/scholar?q={paper['title'].replace(' ', '+')}"
     arxiv_url   = f"https://arxiv.org/search/?query={paper['title'].replace(' ', '+')}"
 
-    return render_template("paper.html", paper=paper, user_note=user_note, authors=authors,
+    return render_template("paper.html", paper=paper, authors=authors,
                            scholar_url=scholar_url, arxiv_url=arxiv_url, 
                            has_rated=has_rated, is_bookmarked=is_bookmarked,
-                           citation_tree=citation_tree)
+                           user_note=user_note, citation_tree=citation_tree,
+                           similar_papers=similar_papers)
 
 @app.route("/for-you")
 @login_required
@@ -256,7 +314,7 @@ def for_you():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT query, COUNT(*) AS freq FROM Search_History WHERE user_id = %s GROUP BY query ORDER BY freq DESC, MAX(searched_at) DESC LIMIT 8", (user_id,))
+    cur.execute("SELECT query, COUNT(*) AS freq FROM Search_History WHERE user_id = %s GROUP BY query ORDER BY freq DESC, MAX(searched_at) DESC LIMIT 5", (user_id,))
     top_queries = cur.fetchall()
 
     cur.execute("SELECT DISTINCT paper_id FROM Reading_History WHERE user_id = %s", (user_id,))
@@ -267,32 +325,67 @@ def for_you():
 
     already_seen = read_ids | bookmarked_ids
     recommendations = {}
+    exclude_list = list(already_seen) if already_seen else [-1]
+
+    # --- NOVEL SQL: Implicit User Affinity (Research DNA) ---
+    # Complex UNION and JOIN to find which authors the user is implicitly following based on interactions
+    cur.execute("""
+        SELECT a.author_id, a.name, COUNT(DISTINCT p.paper_id) as interacted_papers, COALESCE(SUM(p.n_citations), 0) as impact
+        FROM Authors a
+        JOIN Paper_Authors pa ON a.author_id = pa.author_id
+        JOIN Papers p ON pa.paper_id = p.paper_id
+        JOIN (
+            SELECT paper_id FROM Reading_History WHERE user_id = %s
+            UNION
+            SELECT paper_id FROM Bookmarks WHERE user_id = %s
+        ) user_interactions ON p.paper_id = user_interactions.paper_id
+        GROUP BY a.author_id, a.name
+        ORDER BY interacted_papers DESC, impact DESC
+        LIMIT 5;
+    """, (user_id, user_id))
+    affinity_authors = cur.fetchall()
 
     if top_queries:
-        terms = [row["query"] for row in top_queries[:4]]
-        combined_query = " OR ".join(terms)
+        # --- ADVANCED ML: Re-Ranked Semantic Recommendations ---
+        terms = [row["query"] for row in top_queries[:3]]
+        combined_interest = " ".join(terms)
+        interest_vector = embedder.encode(combined_interest).tolist()
+
+        # Fetch Top 100 by vector distance, then re-rank with Citation Popularity
         cur.execute("""
-            SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name, LEFT(p.abstract_text, 180) AS snippet,
-                   ts_rank(to_tsvector('english', p.title || ' ' || p.abstract_text), websearch_to_tsquery('english', %s)) AS score
-            FROM Papers p JOIN Venues v ON p.venue_id = v.venue_id
-            WHERE to_tsvector('english', p.title || ' ' || p.abstract_text) @@ websearch_to_tsquery('english', %s)
-            ORDER BY score DESC, p.n_citations DESC LIMIT 30
-        """, (combined_query, combined_query))
+            WITH SemanticCandidates AS (
+                SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name, 
+                       LEFT(p.abstract_text, 180) AS snippet,
+                       (1 - (pe.embedding <=> %s::vector))::numeric AS similarity_score
+                FROM Papers p 
+                JOIN Venues v ON p.venue_id = v.venue_id
+                JOIN Paper_Embeddings pe ON p.paper_id = pe.paper_id
+                WHERE p.paper_id != ALL(%s)
+                ORDER BY pe.embedding <=> %s::vector
+                LIMIT 100
+            )
+            SELECT *,
+                   ROUND((similarity_score * 0.7) + (LEAST(n_citations, 1000) / 1000.0 * 0.3), 3) AS hybrid_score
+            FROM SemanticCandidates
+            ORDER BY hybrid_score DESC
+            LIMIT 12
+        """, (interest_vector, exclude_list, interest_vector))
 
         for row in cur.fetchall():
             pid = row["paper_id"]
-            if pid not in already_seen:
-                recommendations[pid] = dict(row)
-                recommendations[pid]["reason"] = "Matches your searches"
-                recommendations[pid]["reason_type"] = "search"
+            recommendations[pid] = dict(row)
+            recommendations[pid]["reason"] = "Matches your research interests & popularity"
+            recommendations[pid]["reason_type"] = "search"
 
+    # Fill remaining slots with Trending papers if needed
     if len(recommendations) < 12:
-        exclude = list(already_seen | set(recommendations.keys())) or [-1]
+        exclude_all = list(already_seen | set(recommendations.keys())) or [-1]
         cur.execute("""
-            SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name, LEFT(p.abstract_text, 180) AS snippet, p.n_citations::float AS score
+            SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name, 
+                   LEFT(p.abstract_text, 180) AS snippet, p.n_citations::float AS hybrid_score
             FROM Papers p JOIN Venues v ON p.venue_id = v.venue_id
             WHERE p.paper_id != ALL(%s) ORDER BY p.n_citations DESC LIMIT %s
-        """, (exclude, 24 - len(recommendations)))
+        """, (exclude_all, 12 - len(recommendations)))
 
         for row in cur.fetchall():
             pid = row["paper_id"]
@@ -301,8 +394,8 @@ def for_you():
             r["reason_type"] = "popular"
             recommendations[pid] = r
 
-    priority = {"vector": 0, "search": 1, "popular": 2}
-    sorted_recs = sorted(recommendations.values(), key=lambda x: (priority.get(x["reason_type"], 9), -float(x.get("score") or 0)))[:24]
+    # Sort final list by the new hybrid score
+    sorted_recs = sorted(recommendations.values(), key=lambda x: x.get("hybrid_score", 0), reverse=True)[:12]
 
     cur.execute("SELECT COUNT(DISTINCT paper_id) AS cnt FROM Reading_History WHERE user_id = %s", (user_id,))
     read_count = cur.fetchone()["cnt"]
@@ -312,22 +405,14 @@ def for_you():
     search_count = cur.fetchone()["cnt"]
 
     cur.close(); conn.close()
-    # Create a response object instead of returning the template directly
-    response = make_response(render_template("foryou.html", 
-                           recommendations=sorted_recs, 
-                           top_queries=top_queries,
-                           read_count=read_count, 
-                           bookmark_count=bookmark_count, 
-                           search_count=search_count,
-                           has_history=bool(read_ids or top_queries)))
-                           
-    # Instruct the browser to never cache this page
+    
+    from flask import make_response
+    response = make_response(render_template("foryou.html", recommendations=sorted_recs, 
+                           top_queries=top_queries, affinity_authors=affinity_authors,
+                           read_count=read_count, bookmark_count=bookmark_count, 
+                           search_count=search_count, has_history=bool(read_ids or top_queries)))
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    
-    return response
-    
+    return response    
 
 
 # ── AUTH & ADMIN ───────────────────────────────────────────────────────────────
@@ -394,127 +479,56 @@ def admin_dashboard():
     conn = get_db()
     cur = conn.cursor()
     
+    # 1. Users and Papers for moderation
     cur.execute("SELECT user_id, username, role, institute, trust_factor FROM Users ORDER BY user_id DESC")
     users = cur.fetchall()
     
     cur.execute("SELECT paper_id, title, publication_year FROM Papers ORDER BY uploaded_at DESC NULLS LAST LIMIT 100")
     papers = cur.fetchall()
+
+    # 2. System Health Stats
+    cur.execute("SELECT COUNT(*) as cnt FROM Papers")
+    total_papers = cur.fetchone()["cnt"]
+
+    cur.execute("SELECT COUNT(DISTINCT user_id) as cnt FROM Users")
+    total_users = cur.fetchone()["cnt"]
+
+    cur.execute("SELECT COUNT(DISTINCT user_id) as cnt FROM Reading_History WHERE viewed_at >= NOW() - INTERVAL '7 days'")
+    active_users_7d = cur.fetchone()["cnt"]
+
+    # 3. NEW: User Engagement Metrics
+    cur.execute("SELECT COUNT(*) as cnt FROM Search_History")
+    total_searches = cur.fetchone()["cnt"]
+
+    cur.execute("SELECT COUNT(*) as cnt FROM Bookmarks")
+    total_bookmarks = cur.fetchone()["cnt"]
     
-    # NEW: Fetch venues for the venue management card
-    cur.execute("SELECT venue_id, venue_name, venue_type FROM Venues ORDER BY venue_id DESC LIMIT 100")
-    venues = cur.fetchall()
-    
+    cur.execute("SELECT COUNT(*) as cnt FROM Reading_History")
+    total_reads = cur.fetchone()["cnt"]
+
+    # 4. Read Analytics (Most Viewed Papers)
+    cur.execute("""
+        SELECT p.paper_id, p.title, COUNT(rh.log_id) as view_count
+        FROM Reading_History rh
+        JOIN Papers p ON rh.paper_id = p.paper_id
+        GROUP BY p.paper_id, p.title
+        ORDER BY view_count DESC
+        LIMIT 10
+    """)
+    top_viewed_papers = cur.fetchall()
+
     cur.close(); conn.close()
-    return render_template("admin.html", users=users, papers=papers, venues=venues)
-
-@app.route("/admin/update-user/<int:uid>", methods=["POST"])
-@admin_required
-def admin_update_user(uid):
-    data = request.get_json()
-    new_role = data.get("role")
-    new_tf = data.get("trust_factor")
     
-    conn = get_db()
-    cur = conn.cursor()
-    try:
-        # ADVANCED DBMS: Modifying user constraints and privileges
-        cur.execute("""
-            UPDATE Users 
-            SET role = %s, trust_factor = %s 
-            WHERE user_id = %s
-        """, (new_role, new_tf, uid))
-        conn.commit()
-        return jsonify({"success": True})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"success": False, "error": str(e)})
-    finally:
-        cur.close(); conn.close()
-
-@app.route("/admin/update-venue/<int:vid>", methods=["POST"])
-@admin_required
-def admin_update_venue(vid):
-    data = request.get_json()
-    new_name = data.get("venue_name").strip()
-    new_type = data.get("venue_type")
-    
-    if not new_name:
-        return jsonify({"success": False, "error": "Venue name cannot be empty"})
-        
-    conn = get_db()
-    cur = conn.cursor()
-    try:
-        # ADVANCED DBMS: Normalization in action. Updating the parent entity 
-        # instantly reflects on all child records (Papers) tying to this venue_id.
-        cur.execute("""
-            UPDATE Venues 
-            SET venue_name = %s, venue_type = %s 
-            WHERE venue_id = %s
-        """, (new_name, new_type, vid))
-        conn.commit()
-        return jsonify({"success": True})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"success": False, "error": str(e)})
-    finally:
-        cur.close(); conn.close()
-
-@app.route("/admin/search-papers")
-@admin_required
-def admin_search_papers():
-    query = request.args.get("q", "").strip()
-    conn = get_db()
-    cur = conn.cursor()
-    
-    if query:
-        # ILIKE is Postgres's case-insensitive search
-        cur.execute("""
-            SELECT paper_id, title, publication_year 
-            FROM Papers 
-            WHERE title ILIKE %s 
-            ORDER BY paper_id DESC LIMIT 50
-        """, (f"%{query}%",))
-    else:
-        # If search is empty, just return the 100 most recent
-        cur.execute("""
-            SELECT paper_id, title, publication_year 
-            FROM Papers 
-            ORDER BY uploaded_at DESC NULLS LAST LIMIT 100
-        """)
-        
-    papers = cur.fetchall()
-    cur.close(); conn.close()
-    return jsonify({"papers": papers})
-
-@app.route("/admin/delete-user/<int:del_uid>", methods=["POST"])
-@admin_required
-def admin_delete_user(del_uid):
-    conn = get_db()
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT paper_id FROM Papers WHERE uploaded_by = %s", (del_uid,))
-        user_papers = [r["paper_id"] for r in cur.fetchall()]
-        if user_papers:
-            cur.execute("DELETE FROM Paper_Ratings WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Paper_Embeddings WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Bookmarks WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Reading_History WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Paper_Authors WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Citations WHERE citing_paper_id = ANY(%s) OR cited_paper_id = ANY(%s)", (user_papers, user_papers))
-            cur.execute("DELETE FROM Papers WHERE paper_id = ANY(%s)", (user_papers,))
-        
-        cur.execute("DELETE FROM Paper_Ratings WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Bookmarks WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Reading_History WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Search_History WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Users WHERE user_id = %s", (del_uid,))
-        conn.commit()
-        return jsonify({"success": True})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"success": False, "error": str(e)})
-    finally:
-        cur.close(); conn.close()
+    return render_template("admin.html", 
+                           users=users, 
+                           papers=papers,
+                           total_papers=total_papers,
+                           total_users=total_users,
+                           active_users_7d=active_users_7d,
+                           total_searches=total_searches,
+                           total_bookmarks=total_bookmarks,
+                           total_reads=total_reads,
+                           top_viewed_papers=top_viewed_papers)
 # ── PROFILE & PAPER MANAGEMENT ─────────────────────────────────────────────────
 
 @app.route("/profile")
@@ -573,12 +587,22 @@ def profile():
     # Convert the dictionary to a list for Jinja2
     collections_list = list(my_collections.values())
 
-    cur.close()
-    conn.close()
+    cur.execute("""
+        SELECT pn.paper_id, pn.note_text, pn.last_updated, p.title
+        FROM Paper_Notes pn
+        JOIN Papers p ON pn.paper_id = p.paper_id
+        WHERE pn.user_id = %s
+        ORDER BY pn.last_updated DESC
+    """, (session["user_id"],))
+    my_notes = cur.fetchall()
+
+    cur.close(); conn.close()
+
 
     return render_template("profile.html", user=user, history=history, 
                            bookmarks=bookmarks, search_history=search_history, 
-                           my_uploads=my_uploads, collections=collections_list)
+                           my_uploads=my_uploads, collections=collections_list,
+                           my_notes=my_notes)
 
 
 @app.route("/add-paper", methods=["GET", "POST"])
@@ -1103,5 +1127,74 @@ def delete_search_history():
     finally:
         cur.close(); conn.close()
 
+@app.route("/api/user/settings", methods=["POST"])
+@login_required
+def update_user_settings():
+    data = request.get_json()
+    age = data.get("age")
+    gender = data.get("gender")
+    institute = data.get("institute", "").strip()
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # ADVANCED DBMS: Standard UPDATE query for user profile data
+        cur.execute("""
+            UPDATE Users 
+            SET age = %s, gender = %s, institute = %s 
+            WHERE user_id = %s
+        """, (age if age else None, gender, institute, session["user_id"]))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
+
+@app.route("/api/user/delete_account", methods=["DELETE"])
+@login_required
+def delete_my_account():
+    user_id = session["user_id"]
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # ADVANCED DBMS: The ultimate DELETE operation. 
+        # First, find all papers uploaded by the user and delete their dependencies.
+        cur.execute("SELECT paper_id FROM Papers WHERE uploaded_by = %s", (user_id,))
+        user_papers = [r["paper_id"] for r in cur.fetchall()]
+        
+        if user_papers:
+            cur.execute("DELETE FROM Paper_Ratings WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Embeddings WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Bookmarks WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Reading_History WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Collection_Papers WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Notes WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Authors WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Citations WHERE citing_paper_id = ANY(%s) OR cited_paper_id = ANY(%s)", (user_papers, user_papers))
+            cur.execute("DELETE FROM Papers WHERE paper_id = ANY(%s)", (user_papers,))
+        
+        # Now delete the user's personal activity
+        cur.execute("DELETE FROM Paper_Ratings WHERE user_id = %s", (user_id,))
+        cur.execute("DELETE FROM Bookmarks WHERE user_id = %s", (user_id,))
+        cur.execute("DELETE FROM Reading_History WHERE user_id = %s", (user_id,))
+        cur.execute("DELETE FROM Search_History WHERE user_id = %s", (user_id,))
+        # Collections and Paper_Notes have ON DELETE CASCADE, but explicit deletion is safe
+        cur.execute("DELETE FROM Paper_Notes WHERE user_id = %s", (user_id,))
+        cur.execute("DELETE FROM Collections WHERE user_id = %s", (user_id,))
+        
+        # Finally, delete the user
+        cur.execute("DELETE FROM Users WHERE user_id = %s", (user_id,))
+        
+        conn.commit()
+        session.clear() # Log them out
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
+        
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

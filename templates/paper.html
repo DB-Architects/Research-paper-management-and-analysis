@@ -1,166 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>{{ paper.title[:60] }} — Nexus</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --navy:    #0a0f1e;
-    --navy2:   #0d1528;
-    --navy3:   #111e38;
-    --card:    #0f1c35;
-    --border:  #1a2d50;
-    --teal:    #00d4b4;
-    --teal2:   #00b89a;
-    --teal-dim:#00d4b420;
-    --teal-glow: 0 0 40px #00d4b430;
-    --amber:   #f59e0b;
-    --amber-dim:#f59e0b18;
-    --text:    #e8eef8;
-    --muted:   #6b82a8;
-    --muted2:  #3d5278;
-  }
+{% extends "base.html" %}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+{% block title %}{{ paper.title[:60] }} — Nexus{% endblock %}
 
-  body {
-    background: var(--navy);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-  }
-
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 60px 60px;
-    opacity: 0.12;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* ── NAV ── */
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    display: flex; align-items: center; gap: 24px;
-    padding: 0 40px; height: 64px;
-    background: #0a0f1eee;
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .nav-logo {
-    font-family: 'Inter', sans-serif;
-    font-weight: 800; font-size: 1.2rem;
-    color: var(--text); text-decoration: none; white-space: nowrap;
-  }
-
-  .nav-search {
-    flex: 1; max-width: 480px;
-    display: flex;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px; overflow: hidden;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .nav-search:focus-within { border-color: var(--teal); box-shadow: var(--teal-glow); }
-  .nav-search svg { margin: auto 14px; color: var(--muted2); flex-shrink: 0; }
-  .nav-search input {
-    flex: 1; background: none; border: none; outline: none;
-    padding: 10px 0; font-size: 0.92rem; color: var(--text);
-    font-family: 'Inter', sans-serif;
-  }
-  .nav-search input::placeholder { color: var(--muted2); }
-  .nav-search button {
-    background: var(--teal); border: none; padding: 0 20px;
-    cursor: pointer; font-family: 'Inter', sans-serif;
-    font-weight: 700; font-size: 0.82rem; color: var(--navy);
-    transition: background 0.2s;
-  }
-  .nav-search button:hover { background: var(--teal2); }
-
-  .nav-links { margin-left: auto; display: flex; gap: 24px; align-items: center; }
-  .nav-links a {
-    color: var(--muted); text-decoration: none;
-    font-size: 0.88rem; font-weight: 500; transition: color 0.2s;
-  }
-  .nav-links a:hover { color: var(--text); }
-
+{% block extra_css %}
   /* ── LAYOUT ── */
   .page {
     position: relative; z-index: 1;
-    max-width: 1200px; margin: 0 auto;
-    padding: 40px 24px;
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 32px;
+    max-width: 1200px; margin: 0 auto; padding: 40px 24px;
+    display: grid; grid-template-columns: 1fr 300px; gap: 32px;
   }
-  @media (max-width: 900px) {
-    .page { grid-template-columns: 1fr; gap: 24px; }
-  }
+  @media (max-width: 900px) { .page { grid-template-columns: 1fr; gap: 24px; } }
 
-  /* ── MAIN CONTENT ── */
   .breadcrumb {
-    font-size: 0.8rem; color: var(--muted);
-    margin-bottom: 20px;
+    font-size: 0.8rem; color: var(--muted); margin-bottom: 20px;
     display: flex; align-items: center; gap: 8px;
   }
   .breadcrumb a { color: var(--teal); text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
 
   .paper-header {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 36px;
-    margin-bottom: 24px;
-    position: relative;
-    overflow: hidden;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 36px; margin-bottom: 24px;
+    position: relative; overflow: hidden;
     animation: fadeUp 0.4s ease both;
   }
-
   .paper-header::before {
-    content: '';
-    position: absolute;
+    content: ''; position: absolute;
     top: 0; left: 0; right: 0; height: 3px;
     background: linear-gradient(90deg, var(--teal), var(--teal2), transparent);
   }
 
   .paper-venue {
-    font-size: 0.75rem; color: var(--teal);
-    font-weight: 500; letter-spacing: 1px;
-    text-transform: uppercase; margin-bottom: 14px;
+    font-size: 0.75rem; color: var(--teal); font-weight: 500;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px;
   }
-
   .paper-title {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(1.3rem, 3vw, 1.9rem);
-    font-weight: 800;
-    line-height: 1.25;
-    letter-spacing: -0.5px;
-    margin-bottom: 20px;
+    font-size: clamp(1.3rem, 3vw, 1.9rem); font-weight: 800;
+    line-height: 1.25; letter-spacing: -0.5px; margin-bottom: 20px;
   }
 
-  .paper-authors {
-    display: flex; flex-wrap: wrap; gap: 10px;
-    margin-bottom: 24px;
-  }
-
+  .paper-authors { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
   .author-tag {
-    background: var(--navy3);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 5px 14px;
-    font-size: 0.8rem;
-    color: var(--muted);
-    text-decoration: none;
-    transition: all 0.15s;
+    background: var(--navy3); border: 1px solid var(--border);
+    border-radius: 100px; padding: 5px 14px; font-size: 0.8rem;
+    color: var(--muted); text-decoration: none; transition: all 0.15s;
   }
   .author-tag:hover { border-color: var(--teal); color: var(--teal); }
 
@@ -171,42 +54,28 @@
     border-bottom: 1px solid var(--border);
     margin-bottom: 24px;
   }
-
-  .stat-item {
-    display: flex; align-items: center;
-    gap: 8px; font-size: 0.85rem; color: var(--muted);
-  }
+  .stat-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); }
   .stat-item svg { width: 15px; height: 15px; color: var(--teal); }
-  .stat-item strong { color: var(--text); font-family: 'Inter', sans-serif; }
+  .stat-item strong { color: var(--text); }
   .trust-badge {
-    background: var(--amber-dim);
-    color: var(--amber);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.7rem;
-    font-weight: 700;
+    background: var(--amber-dim); color: var(--amber);
+    padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;
   }
 
-  .paper-actions {
-    display: flex; gap: 12px; flex-wrap: wrap;
-  }
+  .paper-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
   .btn {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 10px 20px; border-radius: 10px;
     font-size: 0.85rem; font-weight: 600;
-    text-decoration: none; cursor: pointer;
-    border: none; font-family: 'Inter', sans-serif;
-    transition: all 0.15s;
+    text-decoration: none; cursor: pointer; border: none;
+    font-family: 'Inter', sans-serif; transition: all 0.15s;
   }
   .btn svg { width: 15px; height: 15px; }
-
   .btn-primary { background: var(--teal); color: var(--navy); }
   .btn-primary:hover { background: var(--teal2); }
-
   .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
   .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
-
   .btn-bookmark { background: transparent; border: 1px solid var(--border); color: var(--muted); }
   .btn-bookmark.bookmarked { background: var(--teal-dim); border-color: #00d4b440; color: var(--teal); }
   .btn-bookmark:hover { border-color: var(--teal); color: var(--teal); }
@@ -222,7 +91,7 @@
     padding: 8px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; outline: none;
   }
   .rating-select:focus { border-color: var(--teal); }
-  
+
   /* ── ABSTRACT ── */
   .section-card {
     background: var(--card); border: 1px solid var(--border);
@@ -230,8 +99,8 @@
     animation: fadeUp 0.4s 0.1s ease both;
   }
   .section-label {
-    font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--teal); margin-bottom: 14px;
   }
   .abstract-text { font-size: 0.93rem; line-height: 1.8; color: #b8c8e0; font-weight: 300; }
 
@@ -243,41 +112,39 @@
     animation: fadeUp 0.4s 0.15s ease both;
   }
   .sidebar-title {
-    font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
   }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-</style>
-</head>
-<body>
 
-<nav>
-  <a class="nav-logo" href="/">Research Portal</a>
-  <form class="nav-search" action="/search" method="GET">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-    <input name="q" type="text" placeholder="Search papers…" autocomplete="off"/>
-    <button type="submit">Go</button>
-  </form>
-  <div class="nav-links">
-    {% if session.role == 'admin' %}
-      <a href="/admin">Admin Board</a>
-    {% endif %}
-    <a href="/analytics">Analytics</a>
-    {% if session.get('username') %}
-      <a href="/profile">{{ session.username }}</a>
-      <a href="/logout">Logout</a>
-    {% else %}
-      <a href="/login">Login</a>
-    {% endif %}
-  </div>
-</nav>
+  /* ── COLLECTION DROPDOWN ── */
+  .dropdown-wrapper { position: relative; display: inline-block; }
+  .collection-menu {
+    display: none; position: absolute; bottom: 110%; left: 0;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; width: 240px; padding: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 50;
+  }
+  .collection-menu.show { display: block; animation: fadeUp 0.2s ease; }
+  .coll-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; border-radius: 6px; cursor: pointer;
+    font-size: 0.85rem; color: var(--text); transition: background 0.15s;
+  }
+  .coll-item:hover { background: var(--navy3); }
+  .coll-input-group { display: flex; gap: 8px; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .coll-input-group input {
+    flex: 1; background: var(--navy); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; outline: none;
+  }
+  .coll-input-group input:focus { border-color: var(--teal); }
+{% endblock %}
 
+{% block content %}
 <div class="page">
   <main>
     <div class="breadcrumb">
@@ -309,31 +176,41 @@
           </svg>
           <strong>{{ paper.n_citations }}</strong> citations
         </div>
-        
+
         {% if paper.uploader_name %}
         <div class="stat-item" style="margin-left: auto;">
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
             <path d="M12 2l3 6 7 1-5 5 1 7-7-4-7 4 1-7-5-5 7-1z"/>
           </svg>
-          Uploaded by <strong>{{ paper.uploader_name }}</strong> 
+          Uploaded by <strong>{{ paper.uploader_name }}</strong>
           <span class="trust-badge" id="tf-badge">{{ paper.trust_factor }}/10 TF</span>
         </div>
         {% endif %}
       </div>
 
       <div class="paper-actions">
-        {% if paper.pdf_path %}
-        <a class="btn" href="{{ paper.pdf_path }}" target="_blank" style="background:var(--navy3); border:1px solid var(--border); color:var(--text);">
-          Read Full PDF
-        </a>
-        {% endif %}
-        <a class="btn btn-primary" href="{{ scholar_url }}" target="_blank">Google Scholar</a>
-        <a class="btn btn-outline" href="{{ arxiv_url }}" target="_blank">arXiv</a>
-        
         {% if session.get('user_id') %}
         <button class="btn btn-bookmark {% if is_bookmarked %}bookmarked{% endif %}" id="bookmark-btn" onclick="toggleBookmark({{ paper.paper_id }})">
           {% if is_bookmarked %}Bookmarked{% else %}Bookmark{% endif %}
         </button>
+
+        <div class="dropdown-wrapper">
+          <button class="btn btn-outline" onclick="toggleCollectionMenu()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Save to Folder
+          </button>
+          <div class="collection-menu" id="collection-menu">
+            <div id="coll-list" style="max-height: 150px; overflow-y: auto; margin-bottom: 8px;">
+              <div style="font-size: 0.75rem; color: var(--muted); text-align: center;">Loading folders...</div>
+            </div>
+            <div class="coll-input-group">
+              <input type="text" id="new-coll-name" placeholder="New folder name..." autocomplete="off">
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="createNewCollection()">Add</button>
+            </div>
+          </div>
+        </div>
         {% endif %}
       </div>
 
@@ -352,13 +229,9 @@
               <select id="rating-val" class="rating-select">
                 <option value="">Select (1-10)</option>
                 <option value="1">1 - Terrible</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
+                <option value="2">2</option><option value="3">3</option><option value="4">4</option>
                 <option value="5">5 - Average</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
+                <option value="6">6</option><option value="7">7</option><option value="8">8</option>
                 <option value="9">9 - Great</option>
                 <option value="10">10 - Perfect</option>
               </select>
@@ -373,26 +246,33 @@
       <div class="section-label">Abstract</div>
       <div class="abstract-text">{{ paper.abstract_text }}</div>
     </div>
+    {% if session.get('user_id') %}
+    <div class="section-card" style="margin-top: 24px; border-top: 3px solid var(--amber);">
+      <div class="section-label" style="color: var(--amber); display: flex; justify-content: space-between; align-items: center;">
+        <span>Private Annotations</span>
+        <span id="note-status" style="font-size: 0.7rem; color: var(--muted); text-transform: none; font-weight: 400;">Saved securely to your profile</span>
+      </div>
+      <textarea id="private-note" placeholder="Type your personal research notes, thoughts, or key takeaways here... They will automatically save as you type." 
+                style="width: 100%; min-height: 120px; background: var(--navy); border: 1px solid var(--border); border-radius: 10px; padding: 16px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.9rem; line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.2s;">{{ user_note if user_note else '' }}</textarea>
+    </div>
+    {% endif %}
   </main>
 
   <aside class="sidebar">
     <div class="sidebar-card">
       <div class="sidebar-title">Citation Network</div>
       <div style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Multi-hop citation graph (Up to 3 levels deep)</div>
-      
+
       {% if citation_tree %}
         <div style="display:flex; flex-direction:column; gap:12px;">
           {% for node in citation_tree %}
-          <a href="/paper/{{ node.paper_id }}" style="text-decoration:none; color:inherit; display:block; padding-left: {{ (node.depth - 1) * 12 }}px; border-left: 2px solid {% if node.depth == 1 %}var(--teal){% elif node.depth == 2 %}var(--amber){% else %}var(--muted){% endif %}; padding-left: 10px;">
-            <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">
-              Level {{ node.depth }} Hop
-            </div>
-            <div style="font-size:0.85rem; font-weight:600; line-height:1.3; margin-top:2px;">
-              {{ node.title[:60] }}...
-            </div>
-            <div style="font-size:0.75rem; color:var(--muted2); margin-top:4px;">
-              Published: {{ node.publication_year }}
-            </div>
+          <a href="/paper/{{ node.paper_id }}"
+             style="text-decoration:none; color:inherit; display:block;
+                    border-left: 2px solid {% if node.depth == 1 %}var(--teal){% elif node.depth == 2 %}var(--amber){% else %}var(--muted){% endif %};
+                    padding-left: 10px;">
+            <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Level {{ node.depth }} Hop</div>
+            <div style="font-size:0.85rem; font-weight:600; line-height:1.3; margin-top:2px;">{{ node.title[:60] }}...</div>
+            <div style="font-size:0.75rem; color:var(--muted2); margin-top:4px;">Published: {{ node.publication_year }}</div>
           </a>
           {% endfor %}
         </div>
@@ -402,8 +282,9 @@
     </div>
   </aside>
 </div>
+{% endblock %}
 
-<script>
+{% block extra_js %}
 async function toggleBookmark(paperId) {
   const btn = document.getElementById('bookmark-btn');
   const res = await fetch('/bookmark/' + paperId, { method: 'POST' });
@@ -420,25 +301,125 @@ async function toggleBookmark(paperId) {
 async function submitRating(paperId) {
   const rating = document.getElementById('rating-val').value;
   if (!rating) return alert("Please select a rating.");
-  
+
   const res = await fetch('/rate/' + paperId, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rating: rating })
   });
-  
   const data = await res.json();
   if (data.success) {
     document.getElementById('tf-badge').textContent = data.new_tf + "/10 TF";
-    document.getElementById('rating-box').innerHTML = "<div style='color:var(--teal); font-weight:600;'>✓ Rating submitted successfully!</div>";
-    document.getElementById('rating-box').style.justifyContent = 'center';
-    document.getElementById('rating-box').style.background = 'var(--teal-dim)';
-    document.getElementById('rating-box').style.borderColor = '#00d4b430';
+    const box = document.getElementById('rating-box');
+    box.innerHTML = "<div style='color:var(--teal); font-weight:600;'>✓ Rating submitted successfully!</div>";
+    box.style.justifyContent = 'center';
+    box.style.background = 'var(--teal-dim)';
+    box.style.borderColor = '#00d4b430';
   } else {
     alert(data.error);
   }
 }
-</script>
+// --- AUTO-SAVE PRIVATE NOTES ---
+const noteArea = document.getElementById('private-note');
+if (noteArea) {
+  let typingTimer;
+  const doneTypingInterval = 1000; // Wait 1 second after user stops typing to save
 
-</body>
-</html>
+  noteArea.addEventListener('input', () => {
+    clearTimeout(typingTimer);
+    document.getElementById('note-status').textContent = "Typing...";
+    document.getElementById('note-status').style.color = "var(--amber)";
+    typingTimer = setTimeout(saveNote, doneTypingInterval);
+  });
+
+  async function saveNote() {
+    document.getElementById('note-status').textContent = "Saving...";
+    const res = await fetch('/save_note/{{ paper.paper_id }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note_text: noteArea.value })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('note-status').textContent = "✓ Saved";
+      document.getElementById('note-status').style.color = "var(--teal)";
+    } else {
+      document.getElementById('note-status').textContent = "Error saving";
+      document.getElementById('note-status').style.color = "#ff6b6b";
+    }
+  }
+}
+
+// --- COLLECTIONS LOGIC ---
+async function toggleCollectionMenu() {
+  const menu = document.getElementById('collection-menu');
+  menu.classList.toggle('show');
+  
+  if (menu.classList.contains('show')) {
+    // Fetch collections when opened
+    const res = await fetch('/api/collections');
+    const data = await res.json();
+    const listDiv = document.getElementById('coll-list');
+    
+    if (data.collections.length === 0) {
+      listDiv.innerHTML = '<div style="font-size: 0.75rem; color: var(--muted); text-align: center;">No folders yet.</div>';
+      return;
+    }
+    
+    listDiv.innerHTML = '';
+    data.collections.forEach(c => {
+      listDiv.innerHTML += `
+        <div class="coll-item" onclick="togglePaperInCollection(${c.collection_id}, this)">
+          <span>📁 ${c.name}</span>
+          <span class="status-icon" style="color: var(--teal); font-size: 0.8rem;"></span>
+        </div>
+      `;
+    });
+  }
+}
+
+async function createNewCollection() {
+  const nameInput = document.getElementById('new-coll-name');
+  if (!nameInput.value.trim()) return;
+
+  const res = await fetch('/api/collections', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: nameInput.value })
+  });
+  const data = await res.json();
+  if (data.success) {
+    nameInput.value = '';
+    // Re-fetch list to show the new folder
+    toggleCollectionMenu(); 
+    setTimeout(toggleCollectionMenu, 50); 
+  }
+}
+
+async function togglePaperInCollection(collectionId, el) {
+  const res = await fetch(`/api/collections/${collectionId}/toggle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paper_id: {{ paper.paper_id }} })
+  });
+  const data = await res.json();
+  const icon = el.querySelector('.status-icon');
+  
+  if (data.success) {
+    if (data.action === "added") {
+      icon.textContent = "✓ Added";
+    } else {
+      icon.textContent = "";
+    }
+  }
+}
+
+// Close dropdown if clicking outside
+document.addEventListener('click', function(event) {
+  const wrapper = document.querySelector('.dropdown-wrapper');
+  if (wrapper && !wrapper.contains(event.target)) {
+    document.getElementById('collection-menu').classList.remove('show');
+  }
+});
+{% endblock %}

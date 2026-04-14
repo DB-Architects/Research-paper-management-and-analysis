@@ -94,6 +94,20 @@ CREATE TABLE Paper_Notes (
     PRIMARY KEY (user_id, paper_id)
 );
 
+CREATE TABLE Collections (
+    collection_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Collection_Papers (
+    collection_id INT REFERENCES Collections(collection_id) ON DELETE CASCADE,
+    paper_id BIGINT REFERENCES Papers(paper_id) ON DELETE CASCADE,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (collection_id, paper_id)
+);
+
 -- Speed up sorting by citations (used on home page and search)
 CREATE INDEX idx_papers_citations ON Papers(n_citations DESC);
 

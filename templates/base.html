@@ -47,7 +47,7 @@
     color: var(--teal); text-decoration: none; white-space: nowrap;
   }
   .nav-logo span { color: var(--text); }
-  
+
   .nav-search {
     flex: 1; max-width: 560px; display: flex;
     background: var(--card); border: 1px solid var(--border);
@@ -66,18 +66,27 @@
     padding: 10px 0; padding-left: 10px; border-left: 1px solid var(--border);
     font-size: 0.92rem; color: var(--text); font-family: 'Inter', sans-serif;
   }
+  .nav-search input::placeholder { color: var(--muted2); }
   .nav-search button {
     background: var(--teal); border: none; padding: 0 20px;
     cursor: pointer; font-family: 'Inter', sans-serif;
     font-weight: 700; font-size: 0.82rem; color: var(--navy);
+    transition: background 0.2s;
   }
-  
+  .nav-search button:hover { background: var(--teal2); }
+
   .nav-links { margin-left: auto; display: flex; gap: 24px; align-items: center; }
-  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; transition: color 0.2s;}
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; transition: color 0.2s; }
   .nav-links a:hover { color: var(--text); }
+  .nav-active { color: var(--teal) !important; }
   .nav-btn { background: var(--teal); color: var(--navy) !important; padding: 7px 16px; border-radius: 8px; font-weight: 600 !important; }
 
-  /* Allow child templates to inject their specific CSS */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--navy); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted2); }
+
+  /* Child templates inject page-specific CSS here */
   {% block extra_css %}{% endblock %}
 </style>
 </head>
@@ -90,7 +99,7 @@
       <option value="papers">Papers</option>
       <option value="authors">Authors</option>
     </select>
-    <input name="q" type="text" value="{{ query if query else '' }}" placeholder="Search database..." autocomplete="off"/>
+    <input name="q" type="text" value="{{ query if query is defined else '' }}" placeholder="Search database..." autocomplete="off"/>
     <button type="submit">Go</button>
   </form>
   <div class="nav-links">
@@ -99,6 +108,7 @@
     {% endif %}
     <a href="/analytics">Analytics</a>
     {% if session.get('username') %}
+      <a href="/for-you">For You</a>
       <a href="/profile">{{ session.username }}</a>
       <a href="/logout">Logout</a>
     {% else %}
@@ -112,14 +122,13 @@
 {% endblock %}
 
 <script>
-  // Global search toggle script
   function updateGlobalSearch() {
     const type = document.getElementById('globalSearchType').value;
     document.getElementById('globalNavSearchForm').action = type === 'authors' ? '/search_authors' : '/search';
   }
-</script>
 
-{% block extra_js %}{% endblock %}
+  {% block extra_js %}{% endblock %}
+</script>
 
 </body>
 </html>

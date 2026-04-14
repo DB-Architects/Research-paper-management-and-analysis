@@ -242,7 +242,7 @@ def paper_detail(paper_id):
     scholar_url = f"https://scholar.google.com/scholar?q={paper['title'].replace(' ', '+')}"
     arxiv_url   = f"https://arxiv.org/search/?query={paper['title'].replace(' ', '+')}"
 
-    return render_template("paper.html", paper=paper, authors=authors,
+    return render_template("paper.html", paper=paper, user_note=user_note, authors=authors,
                            scholar_url=scholar_url, arxiv_url=arxiv_url, 
                            has_rated=has_rated, is_bookmarked=is_bookmarked,
                            citation_tree=citation_tree)
@@ -489,8 +489,38 @@ def profile():
     cur.execute("SELECT p.paper_id, p.title, p.publication_year, p.n_citations, p.uploaded_at, p.pdf_path FROM Papers p WHERE p.uploaded_by = %s ORDER BY p.uploaded_at DESC", (session["user_id"],))
     my_uploads = cur.fetchall()
 
-    cur.close(); conn.close()
-    return render_template("profile.html", user=user, history=history, bookmarks=bookmarks, search_history=search_history, my_uploads=my_uploads)
+    cur.execute("""
+        SELECT c.collection_id, c.name as collection_name,
+               p.paper_id, p.title, p.publication_year, p.n_citations
+        FROM Collections c
+        LEFT JOIN Collection_Papers cp ON c.collection_id = cp.collection_id
+        LEFT JOIN Papers p ON cp.paper_id = p.paper_id
+        WHERE c.user_id = %s
+        ORDER BY c.created_at DESC, cp.added_at DESC
+    """, (session["user_id"],))
+
+    collections_raw = cur.fetchall()
+
+    my_collections = {}
+    for row in collections_raw:
+        cid = row["collection_id"]
+        if cid not in my_collections:
+            my_collections[cid] = {"collection_id": cid, "name": row["collection_name"], "papers": []}
+        
+        # If there is a paper attached to this row, add it to the list
+        if row["paper_id"]: 
+            my_collections[cid]["papers"].append(row)
+
+    # Convert the dictionary to a list for Jinja2
+    collections_list = list(my_collections.values())
+
+    cur.close()
+    conn.close()
+
+    return render_template("profile.html", user=user, history=history, 
+                           bookmarks=bookmarks, search_history=search_history, 
+                           my_uploads=my_uploads, collections=collections_list)
+
 
 @app.route("/add-paper", methods=["GET", "POST"])
 @login_required
@@ -883,6 +913,136 @@ def save_note(paper_id):
     finally:
         cur.close()
         conn.close()
+
+@app.route("/api/collections", methods=["GET", "POST"])
+@login_required
+def manage_collections():
+    user_id = session["user_id"]
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == "POST":
+        # CREATE a new collection
+        data = request.get_json()
+        name = data.get("name", "").strip()
+        if not name: return jsonify({"success": False, "error": "Name required"})
+        
+        cur.execute("INSERT INTO Collections (user_id, name) VALUES (%s, %s) RETURNING collection_id", (user_id, name))
+        new_id = cur.fetchone()["collection_id"]
+        conn.commit()
+        cur.close(); conn.close()
+        return jsonify({"success": True, "collection_id": new_id, "name": name})
+
+    # GET all collections for this user
+    cur.execute("SELECT collection_id, name FROM Collections WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+    collections = cur.fetchall()
+    cur.close(); conn.close()
+    return jsonify({"collections": collections})
+
+@app.route("/api/collections/<int:collection_id>/toggle", methods=["POST"])
+@login_required
+def toggle_collection_paper(collection_id):
+    data = request.get_json()
+    paper_id = data.get("paper_id")
+    user_id = session["user_id"]
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    try:
+        # Security check: Ensure this user owns the collection
+        cur.execute("SELECT 1 FROM Collections WHERE collection_id = %s AND user_id = %s", (collection_id, user_id))
+        if not cur.fetchone():
+            return jsonify({"success": False, "error": "Unauthorized"}), 403
+
+        # Check if paper is already in collection
+        cur.execute("SELECT 1 FROM Collection_Papers WHERE collection_id = %s AND paper_id = %s", (collection_id, paper_id))
+        if cur.fetchone():
+            # DELETE operation
+            cur.execute("DELETE FROM Collection_Papers WHERE collection_id = %s AND paper_id = %s", (collection_id, paper_id))
+            action = "removed"
+        else:
+            # INSERT operation
+            cur.execute("INSERT INTO Collection_Papers (collection_id, paper_id) VALUES (%s, %s)", (collection_id, paper_id))
+            action = "added"
+            
+        conn.commit()
+        return jsonify({"success": True, "action": action})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
+
+@app.route("/api/collections/<int:collection_id>", methods=["DELETE"])
+@login_required
+def delete_collection(collection_id):
+    user_id = session["user_id"]
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # ADVANCED DBMS: Deleting the parent (Collections) automatically deletes 
+        # the children (Collection_Papers) because of ON DELETE CASCADE.
+        cur.execute("""
+            DELETE FROM Collections 
+            WHERE collection_id = %s AND user_id = %s 
+            RETURNING collection_id
+        """, (collection_id, user_id))
+        
+        if cur.fetchone():
+            conn.commit()
+            return jsonify({"success": True})
+        return jsonify({"success": False, "error": "Unauthorized or not found"}), 403
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route("/api/history/reading", methods=["DELETE"])
+@login_required
+def delete_reading_history():
+    data = request.get_json()
+    paper_id = data.get("paper_id")
+    user_id = session["user_id"]
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if paper_id == "all":
+            cur.execute("DELETE FROM Reading_History WHERE user_id = %s", (user_id,))
+        else:
+            cur.execute("DELETE FROM Reading_History WHERE user_id = %s AND paper_id = %s", (user_id, paper_id))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
+
+@app.route("/api/history/search", methods=["DELETE"])
+@login_required
+def delete_search_history():
+    data = request.get_json()
+    query = data.get("query")
+    user_id = session["user_id"]
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if query == "all":
+            cur.execute("DELETE FROM Search_History WHERE user_id = %s", (user_id,))
+        else:
+            cur.execute("DELETE FROM Search_History WHERE user_id = %s AND query = %s", (user_id, query))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

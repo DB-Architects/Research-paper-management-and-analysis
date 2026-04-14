@@ -1,77 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>{{ session.username }} — Profile</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<style>
-  :root {
-    --navy:#0a0f1e; --navy3:#111e38; --card:#0f1c35; --border:#1a2d50;
-    --teal:#00d4b4; --teal2:#00b89a; --teal-dim:#00d4b420;
-    --teal-glow:0 0 40px #00d4b430;
-    --amber:#f59e0b; --amber-dim:#f59e0b18;
-    --text:#e8eef8; --muted:#6b82a8; --muted2:#3d5278;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body {
-    background:var(--navy); color:var(--text);
-    font-family:'Inter',sans-serif; min-height:100vh;
-  }
-  body::before {
-    content:''; position:fixed; inset:0;
-    background-image:
-      linear-gradient(var(--border) 1px,transparent 1px),
-      linear-gradient(90deg,var(--border) 1px,transparent 1px);
-    background-size:60px 60px; opacity:0.12;
-    pointer-events:none; z-index:0;
-  }
+{% extends "base.html" %}
 
-  /* ── NAV ── */
-  nav {
-    position:sticky; top:0; z-index:100;
-    display:flex; align-items:center; gap:24px;
-    padding:0 40px; height:64px;
-    background:#0a0f1eee; backdrop-filter:blur(16px);
-    border-bottom:1px solid var(--border);
-  }
-  .nav-logo {
-    font-family:'Inter',sans-serif; font-weight:800;
-    font-size:1.2rem; color:var(--text); text-decoration:none;
-  }
-  .nav-search {
-    flex:1; max-width:480px; display:flex;
-    background:var(--card); border:1px solid var(--border);
-    border-radius:10px; overflow:hidden;
-    transition:border-color 0.2s,box-shadow 0.2s;
-  }
-  .nav-search:focus-within{border-color:var(--teal);box-shadow:var(--teal-glow);}
-  .nav-search svg{margin:auto 14px;color:var(--muted2);flex-shrink:0;}
-  .nav-search input {
-    flex:1;background:none;border:none;outline:none;
-    padding:10px 0;font-size:0.92rem;color:var(--text);
-    font-family:'Inter',sans-serif;
-  }
-  .nav-search input::placeholder{color:var(--muted2);}
-  .nav-search button {
-    background:var(--teal);border:none;padding:0 20px;
-    cursor:pointer;font-family:'Inter',sans-serif;
-    font-weight:700;font-size:0.82rem;color:var(--navy);
-  }
-  .nav-links{margin-left:auto;display:flex;gap:24px;align-items:center;}
-  .nav-links a{color:var(--muted);text-decoration:none;font-size:0.88rem;font-weight:500;transition:color 0.2s;}
-  .nav-links a:hover{color:var(--text);}
-  .nav-active{color:var(--teal)!important;}
+{% block title %}{{ session.username }} — Profile{% endblock %}
 
+{% block extra_css %}
   /* ── PAGE ── */
   .page {
-    position:relative;z-index:1;
-    max-width:1100px;margin:0 auto;
-    padding:40px 24px;
-    display:grid;
-    grid-template-columns:260px 1fr;
-    gap:32px;
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto; padding: 40px 24px;
+    display: grid; grid-template-columns: 260px 1fr; gap: 32px;
   }
   @media (max-width: 900px) {
     .page { grid-template-columns: 1fr; gap: 24px; }
@@ -79,297 +15,185 @@
   }
 
   /* ── PROFILE SIDEBAR ── */
-  .profile-sidebar{align-self:start;position:sticky;top:84px;}
+  .profile-sidebar { align-self: start; position: sticky; top: 84px; }
 
   .profile-card {
-    background:var(--card);border:1px solid var(--border);
-    border-radius:16px;padding:28px;
-    text-align:center;margin-bottom:16px;
-    animation:fadeUp 0.4s ease both;
-    position:relative;overflow:hidden;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; text-align: center; margin-bottom: 16px;
+    animation: fadeUp 0.4s ease both; position: relative; overflow: hidden;
   }
   .profile-card::before {
-    content:'';position:absolute;
-    top:0;left:0;right:0;height:3px;
-    background:linear-gradient(90deg,var(--teal),var(--teal2),transparent);
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--teal2), transparent);
   }
 
   .avatar {
-    width:72px;height:72px;
-    background:var(--teal-dim);
-    border:2px solid #00d4b440;
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    margin:0 auto 16px;
-    font-family:'Inter',sans-serif;
-    font-size:1.6rem;font-weight:800;
-    color:var(--teal);
+    width: 72px; height: 72px; background: var(--teal-dim);
+    border: 2px solid #00d4b440; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 1.6rem; font-weight: 800; color: var(--teal);
   }
 
-  .profile-name {
-    font-family:'Inter',sans-serif;
-    font-size:1.1rem;font-weight:700;margin-bottom:4px;
-  }
+  .profile-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
   .profile-trust {
-    display: inline-block;
-    background: var(--amber-dim);
-    border: 1px solid #f59e0b40;
-    color: var(--amber);
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 100px;
-    margin-bottom: 12px;
+    display: inline-block; background: var(--amber-dim);
+    border: 1px solid #f59e0b40; color: var(--amber);
+    font-size: 0.75rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 100px; margin-bottom: 12px;
   }
-
-  .profile-institute {
-    font-size:0.8rem;color:var(--muted);margin-bottom:20px;
-  }
+  .profile-institute { font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
 
   .profile-stats {
-    display:grid;grid-template-columns:1fr 1fr;
-    gap:1px;background:var(--border);
-    border-radius:10px;overflow:hidden;margin-bottom:20px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--border);
+    border-radius: 10px; overflow: hidden; margin-bottom: 20px;
   }
-
-  .pstat {
-    background:var(--navy);padding:12px 8px;text-align:center;
-  }
-  .pstat-num {
-    font-family:'Inter',sans-serif;
-    font-size:1.2rem;font-weight:800;color:var(--teal);
-  }
+  .pstat { background: var(--navy); padding: 12px 8px; text-align: center; }
+  .pstat-num { font-size: 1.2rem; font-weight: 800; color: var(--teal); }
   .pstat-label {
-    font-size:0.68rem;color:var(--muted);
-    text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;
+    font-size: 0.68rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;
   }
 
   .for-you-btn {
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    width:100%;background:var(--teal);
-    border:none;border-radius:10px;padding:11px;
-    color:var(--navy);font-size:0.85rem;
-    font-family:'Inter',sans-serif;font-weight:700;
-    cursor:pointer;text-decoration:none;
-    transition:background 0.15s;margin-bottom:10px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; background: var(--teal); border: none; border-radius: 10px; padding: 11px;
+    color: var(--navy); font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 700;
+    cursor: pointer; text-decoration: none; transition: background 0.15s; margin-bottom: 10px;
   }
-  .for-you-btn:hover{background:var(--teal2);}
+  .for-you-btn:hover { background: var(--teal2); }
 
   .upload-btn {
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    width:100%;background:transparent;
-    border:1px solid var(--teal);border-radius:10px;padding:11px;
-    color:var(--teal);font-size:0.85rem;
-    font-family:'Inter',sans-serif;font-weight:700;
-    cursor:pointer;text-decoration:none;
-    transition:background 0.15s;margin-bottom:10px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; background: transparent; border: 1px solid var(--teal);
+    border-radius: 10px; padding: 11px; color: var(--teal);
+    font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 700;
+    cursor: pointer; text-decoration: none; transition: background 0.15s; margin-bottom: 10px;
   }
-  .upload-btn:hover{background:var(--teal-dim);}
+  .upload-btn:hover { background: var(--teal-dim); }
 
   .logout-btn {
-    display:block;width:100%;
-    background:transparent;
-    border:1px solid var(--border);
-    border-radius:10px;padding:10px;
-    color:var(--muted);font-size:0.85rem;
-    font-family:'Inter',sans-serif;
-    cursor:pointer;text-decoration:none;
-    text-align:center;transition:all 0.15s;
+    display: block; width: 100%; background: transparent;
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px;
+    color: var(--muted); font-size: 0.85rem; font-family: 'Inter', sans-serif;
+    cursor: pointer; text-decoration: none; text-align: center; transition: all 0.15s;
   }
-  .logout-btn:hover{border-color:#ff6b6b;color:#ff6b6b;}
+  .logout-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
 
   /* ── MAIN ── */
-  .main-content{min-width:0;}
+  .main-content { min-width: 0; }
 
   /* ── TABS ── */
   .tabs {
-    display:flex;gap:4px;
-    background:var(--navy3);
-    border-radius:12px;padding:4px;
-    margin-bottom:24px;
-    animation:fadeUp 0.4s 0.05s ease both;
+    display: flex; gap: 4px; background: var(--navy3);
+    border-radius: 12px; padding: 4px; margin-bottom: 24px;
+    animation: fadeUp 0.4s 0.05s ease both;
   }
   .tab {
-    flex:1;padding:10px;border-radius:9px;
-    border:none;background:none;
-    font-family:'Inter',sans-serif;
-    font-size:0.85rem;font-weight:500;
-    color:var(--muted);cursor:pointer;
-    transition:all 0.15s;text-align:center;
+    flex: 1; padding: 10px; border-radius: 9px; border: none; background: none;
+    font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+    color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center;
   }
-  .tab.active {
-    background:var(--card);
-    color:var(--text);
-    border:1px solid var(--border);
-  }
-  .tab-content{display:none;}
-  .tab-content.active{display:block;animation:fadeUp 0.3s ease both;}
+  .tab.active { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeUp 0.3s ease both; }
 
   /* ── PAPER ITEM ── */
   .paper-item {
-    display:flex;align-items:flex-start;gap:16px;
-    background:var(--card);border:1px solid var(--border);
-    border-radius:14px;padding:20px;
-    margin-bottom:12px;text-decoration:none;
-    color:inherit;transition:all 0.15s;
-    position:relative;overflow:hidden;
+    display: flex; align-items: flex-start; gap: 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; margin-bottom: 12px;
+    text-decoration: none; color: inherit; transition: all 0.15s;
+    position: relative; overflow: hidden;
   }
   .paper-item::before {
-    content:'';position:absolute;
-    left:0;top:0;bottom:0;width:3px;
-    background:var(--teal);opacity:0;
-    transition:opacity 0.15s;
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--teal); opacity: 0; transition: opacity 0.15s;
   }
-  .paper-item:hover{border-color:#00d4b450;transform:translateX(4px);}
-  .paper-item:hover::before{opacity:1;}
+  .paper-item:hover { border-color: #00d4b450; transform: translateX(4px); }
+  .paper-item:hover::before { opacity: 1; }
 
-  .paper-item-num {
-    font-family:'Inter',sans-serif;
-    font-size:0.75rem;color:var(--muted2);
-    min-width:24px;margin-top:2px;flex-shrink:0;
-  }
-
-  .paper-item-body{flex:1;min-width:0;}
-
+  .paper-item-num { font-size: 0.75rem; color: var(--muted2); min-width: 24px; margin-top: 2px; flex-shrink: 0; }
+  .paper-item-body { flex: 1; min-width: 0; }
   .paper-item-title {
-    font-family:'Inter',sans-serif;
-    font-size:0.92rem;font-weight:700;
-    line-height:1.35;margin-bottom:8px;
-    display:-webkit-box;-webkit-line-clamp:2;
-    -webkit-box-orient:vertical;overflow:hidden;
+    font-size: 0.92rem; font-weight: 700; line-height: 1.35; margin-bottom: 8px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
+  .paper-item-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 
-  .paper-item-meta {
-    display:flex;align-items:center;
-    gap:16px;flex-wrap:wrap;
-  }
-
-  .meta-chip {
-    display:flex;align-items:center;gap:5px;
-    font-size:0.75rem;color:var(--muted);
-  }
-  .meta-chip svg{width:11px;height:11px;}
-
+  .meta-chip { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--muted); }
+  .meta-chip svg { width: 11px; height: 11px; }
   .cite-chip {
-    background:var(--teal-dim);border:1px solid #00d4b430;
-    border-radius:100px;padding:2px 10px;
-    font-size:0.72rem;color:var(--teal);font-weight:600;
+    background: var(--teal-dim); border: 1px solid #00d4b430;
+    border-radius: 100px; padding: 2px 10px; font-size: 0.72rem; color: var(--teal); font-weight: 600;
   }
-
-  .time-chip {
-    margin-left:auto;font-size:0.72rem;
-    color:var(--muted2);white-space:nowrap;
-  }
+  .time-chip { margin-left: auto; font-size: 0.72rem; color: var(--muted2); white-space: nowrap; }
 
   .del-btn {
-    background:transparent;border:1px solid var(--border);
-    border-radius:8px;padding:6px 10px;
-    color:var(--muted);font-size:0.75rem;
-    cursor:pointer;flex-shrink:0;
-    transition:all 0.15s;font-family:'Inter',sans-serif;
-    align-self:center;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; color: var(--muted); font-size: 0.75rem;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s;
+    font-family: 'Inter', sans-serif; align-self: center;
   }
-  .del-btn:hover{border-color:#ff6b6b;color:#ff6b6b;}
+  .del-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
 
-  /* ── SEARCH HISTORY ITEMS ── */
+  /* ── SEARCH HISTORY ── */
   .search-row {
-    display:flex;align-items:center;gap:12px;
-    background:var(--card);border:1px solid var(--border);
-    border-radius:12px;padding:14px 18px;
-    margin-bottom:10px;
-    transition:border-color 0.15s;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; transition: border-color 0.15s;
   }
-  .search-row:hover{border-color:#00d4b430;}
-
+  .search-row:hover { border-color: #00d4b430; }
   .search-icon-wrap {
-    width:32px;height:32px;
-    background:var(--teal-dim);border:1px solid #00d4b430;
-    border-radius:8px;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-    color:var(--teal);
+    width: 32px; height: 32px; background: var(--teal-dim); border: 1px solid #00d4b430;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--teal);
   }
-  .search-icon-wrap svg{width:14px;height:14px;}
-
-  .search-query {
-    flex:1;font-size:0.9rem;font-weight:500;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-
+  .search-icon-wrap svg { width: 14px; height: 14px; }
+  .search-query { flex: 1; font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .search-freq-badge {
-    background:var(--amber-dim);border:1px solid #f59e0b30;
-    border-radius:100px;padding:2px 10px;
-    font-size:0.7rem;color:var(--amber);font-weight:600;
-    white-space:nowrap;flex-shrink:0;
+    background: var(--amber-dim); border: 1px solid #f59e0b30;
+    border-radius: 100px; padding: 2px 10px; font-size: 0.7rem; color: var(--amber); font-weight: 600;
+    white-space: nowrap; flex-shrink: 0;
   }
-
-  .search-date {
-    font-size:0.72rem;color:var(--muted2);
-    white-space:nowrap;flex-shrink:0;
-  }
-
+  .search-date { font-size: 0.72rem; color: var(--muted2); white-space: nowrap; flex-shrink: 0; }
   .search-go-btn {
-    display:flex;align-items:center;justify-content:center;
-    width:28px;height:28px;
-    background:transparent;border:1px solid var(--border);
-    border-radius:6px;cursor:pointer;
-    color:var(--muted);text-decoration:none;
-    transition:all 0.15s;flex-shrink:0;
-    font-size:0.78rem;
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; background: transparent; border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer; color: var(--muted); text-decoration: none;
+    transition: all 0.15s; flex-shrink: 0; font-size: 0.78rem;
   }
-  .search-go-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .search-go-btn:hover { border-color: var(--teal); color: var(--teal); }
 
   /* Empty state */
-  .empty {
-    text-align:center;padding:60px 24px;color:var(--muted);
-  }
-  .empty h3{
-    font-family:'Inter',sans-serif;
-    font-size:1.1rem;margin-bottom:8px;color:var(--text);
-  }
-  .empty a{color:var(--teal);text-decoration:none;}
+  .empty { text-align: center; padding: 60px 24px; color: var(--muted); }
+  .empty h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--text); }
+  .empty a { color: var(--teal); text-decoration: none; }
 
   @keyframes fadeUp {
-    from{opacity:0;transform:translateY(16px);}
-    to{opacity:1;transform:translateY(0);}
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-  ::-webkit-scrollbar{width:6px;}
-  ::-webkit-scrollbar-track{background:var(--navy);}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
-</style>
-<script>
-    // Listen for the page show event
-    window.addEventListener("pageshow", function (event) {
-        // event.persisted is true if the page is loaded from the bfcache
-        if (event.persisted) {
-            // Force a hard reload from the server
-            window.location.reload(); 
-        }
-    });
-</script>
-</head>
-<body>
 
-<nav>
-  <a class="nav-logo" href="/">Research Portal</a>
-  <form class="nav-search" action="/search" method="GET">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-    <input name="q" type="text" placeholder="Search papers…" autocomplete="off"/>
-    <button type="submit">Go</button>
-  </form>
-  <div class="nav-links">
-    {% if session.role == 'admin' %}
-      <a href="/admin">Admin Board</a>
-    {% endif %}
-    <a href="/analytics">Analytics</a>
-    <a href="/for-you">For You</a>
-    <a href="/profile" class="nav-active">{{ session.username }}</a>
-    <a href="/logout">Logout</a>
-  </div>
-</nav>
+  /* ── FOLDERS ── */
+  .folder-card {
+    background: var(--navy3); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; margin-bottom: 24px;
+    animation: fadeUp 0.3s ease both;
+  }
+  .folder-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .folder-name {
+    font-size: 1.1rem; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .folder-empty { font-size: 0.85rem; color: var(--muted); text-align: center; padding: 20px 0; }
+{% endblock %}
 
+{% block content %}
 <div class="page">
 
   <aside class="profile-sidebar">
@@ -415,31 +239,43 @@
       <button class="tab" onclick="switchTab('uploads', this)">
         My Uploads ({{ my_uploads|length }})
       </button>
+      <button class="tab" onclick="switchTab('folders', this)">
+        Folders ({{ collections|length }})
+      </button>
     </div>
 
     <div class="tab-content active" id="tab-history">
       {% if history %}
-        {% for i, item in enumerate(history) %}
-        <a class="paper-item" href="/paper/{{ item.paper_id }}">
-          <div class="paper-item-num">{{ i+1 }}</div>
-          <div class="paper-item-body">
-            <div class="paper-item-title">{{ item.title }}</div>
-            <div class="paper-item-meta">
-              <div class="meta-chip">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                {{ item.publication_year }}
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;" id="history-header">
+          <button class="del-btn" style="border-color: #ff6b6b; color: #ff6b6b;" onclick="clearAllHistory('reading')">
+            Clear All History
+          </button>
+        </div>
+        <div id="reading-history-container">
+          {% for i, item in enumerate(history) %}
+          <div class="paper-item" style="cursor:default">
+            <div class="paper-item-num">{{ i+1 }}</div>
+            <div class="paper-item-body">
+              <a href="/paper/{{ item.paper_id }}" style="text-decoration:none;color:inherit">
+                <div class="paper-item-title">{{ item.title }}</div>
+              </a>
+              <div class="paper-item-meta">
+                <div class="meta-chip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  {{ item.publication_year }}
+                </div>
+                <div class="cite-chip">↑ {{ item.n_citations }}</div>
+                <div class="time-chip">Viewed {{ item.viewed_at.strftime('%b %d, %Y') }}</div>
               </div>
-              <div class="cite-chip">↑ {{ item.n_citations }}</div>
-              <div class="time-chip">{{ item.viewed_at.strftime('%b %d, %Y') }}</div>
             </div>
+            <button class="del-btn" onclick="removeHistoryItem('reading', {{ item.paper_id }}, this.closest('.paper-item'))">Remove</button>
           </div>
-        </a>
-        {% endfor %}
+          {% endfor %}
+        </div>
       {% else %}
         <div class="empty">
           <h3>No reading history yet</h3>
@@ -448,7 +284,52 @@
         </div>
       {% endif %}
     </div>
-
+    <div class="tab-content" id="tab-folders">
+      {% if collections %}
+        {% for folder in collections %}
+        <div class="folder-card" id="folder-{{ folder.collection_id }}">
+          
+          <div class="folder-header">
+            <div class="folder-name">📁 {{ folder.name }}</div>
+            <button class="del-btn" style="border-color:#ff6b6b; color:#ff6b6b;" 
+                    onclick="deleteFolder({{ folder.collection_id }}, this.closest('.folder-card'))">
+              Delete Folder
+            </button>
+          </div>
+          
+          <div class="folder-items">
+            {% if folder.papers %}
+              {% for p in folder.papers %}
+              <div class="paper-item" style="cursor:default; background: var(--card);">
+                <div class="paper-item-body">
+                  <a href="/paper/{{ p.paper_id }}" style="text-decoration:none;color:inherit">
+                    <div class="paper-item-title">{{ p.title }}</div>
+                  </a>
+                  <div class="paper-item-meta">
+                    <div class="meta-chip">Published: {{ p.publication_year }}</div>
+                    <div class="cite-chip">↑ {{ p.n_citations }}</div>
+                  </div>
+                </div>
+                <button class="del-btn" 
+                        onclick="removePaperFromFolder({{ folder.collection_id }}, {{ p.paper_id }}, this.closest('.paper-item'))">
+                  Remove
+                </button>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="folder-empty">This folder is empty.</div>
+            {% endif %}
+          </div>
+          
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">
+          <h3>No folders yet</h3>
+          <p>Create folders on any paper's page to organize your research.</p>
+        </div>
+      {% endif %}
+    </div>
     <div class="tab-content" id="tab-bookmarks">
       {% if bookmarks %}
         {% for i, item in enumerate(bookmarks) %}
@@ -462,8 +343,7 @@
               <div class="meta-chip">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
                   <line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
                 {{ item.publication_year }}
@@ -472,10 +352,7 @@
               <div class="time-chip">Saved {{ item.bookmarked_at.strftime('%b %d') }}</div>
             </div>
           </div>
-          <button class="del-btn"
-                  onclick="removeBookmark({{ item.paper_id }}, this.parentElement)">
-            Remove
-          </button>
+          <button class="del-btn" onclick="removeBookmark({{ item.paper_id }}, this.parentElement)">Remove</button>
         </div>
         {% endfor %}
       {% else %}
@@ -488,23 +365,31 @@
 
     <div class="tab-content" id="tab-searches">
       {% if search_history %}
-        {% for item in search_history %}
-        <div class="search-row">
-          <div class="search-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-          </div>
-          <div class="search-query">{{ item.query }}</div>
-          <span class="search-freq-badge">{{ item.freq }}× searched</span>
-          <span class="search-date">{{ item.last_searched.strftime('%b %d') }}</span>
-          <a class="search-go-btn" href="/search?q={{ item.query }}" title="Search again">→</a>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;" id="search-header">
+          <button class="del-btn" style="border-color: #ff6b6b; color: #ff6b6b;" onclick="clearAllHistory('search')">
+            Clear All Searches
+          </button>
         </div>
-        {% endfor %}
+        <div id="search-history-container">
+          {% for item in search_history %}
+          <div class="search-row">
+            <div class="search-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <div class="search-query">{{ item.query }}</div>
+            <span class="search-freq-badge">{{ item.freq }}× searched</span>
+            <span class="search-date">{{ item.last_searched.strftime('%b %d') }}</span>
+            <a class="search-go-btn" href="/search?q={{ item.query }}" title="Search again">→</a>
+            <button class="del-btn" style="margin-left: 8px;" onclick="removeHistoryItem('search', '{{ item.query|replace("'", "\\'") }}', this.closest('.search-row'))">Remove</button>
+          </div>
+          {% endfor %}
+        </div>
       {% else %}
         <div class="empty">
           <h3>No searches yet</h3>
-          <p>Your search history builds automatically as you use Research Portal.<br/>
+          <p>Your search history builds automatically as you use Nexus.<br/>
           <a href="/">Try searching for a topic →</a></p>
         </div>
       {% endif %}
@@ -517,7 +402,8 @@
             <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)" style="accent-color: var(--teal); width: 16px; height: 16px;">
             Select All
           </label>
-          <button class="del-btn" id="bulk-delete-btn" onclick="deleteSelectedPapers()" style="display: none; border-color: #ff6b6b; color: #ff6b6b;">
+          <button class="del-btn" id="bulk-delete-btn" onclick="deleteSelectedPapers()"
+                  style="display: none; border-color: #ff6b6b; color: #ff6b6b;">
             Delete Selected (<span id="selected-count">0</span>)
           </button>
         </div>
@@ -525,8 +411,8 @@
         <div id="uploads-container">
           {% for i, item in enumerate(my_uploads) %}
           <div class="paper-item upload-item" data-id="{{ item.paper_id }}" style="cursor:default; align-items: center;">
-            <input type="checkbox" class="paper-checkbox" value="{{ item.paper_id }}" onchange="updateBulkUI()" style="accent-color: var(--teal); width: 18px; height: 18px; margin-right: 12px; cursor: pointer;">
-            
+            <input type="checkbox" class="paper-checkbox" value="{{ item.paper_id }}" onchange="updateBulkUI()"
+                   style="accent-color: var(--teal); width: 18px; height: 18px; margin-right: 12px; cursor: pointer;">
             <div class="paper-item-body">
               <a href="/paper/{{ item.paper_id }}" style="text-decoration:none;color:inherit">
                 <div class="paper-item-title">{{ item.title }}</div>
@@ -537,19 +423,16 @@
                 <div class="time-chip">Uploaded {{ item.uploaded_at.strftime('%b %d, %Y') }}</div>
               </div>
             </div>
-            
             <div style="display: flex; gap: 8px;">
               {% if item.pdf_path %}
-              <a href="{{ item.pdf_path }}" target="_blank" class="del-btn" style="text-decoration:none; color:var(--teal); border-color:#00d4b450; text-align:center;">
+              <a href="{{ item.pdf_path }}" target="_blank" class="del-btn"
+                 style="text-decoration:none; color:var(--teal); border-color:#00d4b450; text-align:center;">
                 View PDF
               </a>
               {% endif %}
-              <a href="/edit-paper/{{ item.paper_id }}" class="del-btn" style="text-decoration:none; color:var(--text); text-align:center;">
-                Edit
-              </a>
-              <button class="del-btn" onclick="deleteSinglePaper({{ item.paper_id }}, this.closest('.upload-item'))">
-                Delete
-              </button>
+              <a href="/edit-paper/{{ item.paper_id }}" class="del-btn"
+                 style="text-decoration:none; color:var(--text); text-align:center;">Edit</a>
+              <button class="del-btn" onclick="deleteSinglePaper({{ item.paper_id }}, this.closest('.upload-item'))">Delete</button>
             </div>
           </div>
           {% endfor %}
@@ -565,8 +448,14 @@
 
   </main>
 </div>
+{% endblock %}
 
-<script>
+{% block extra_js %}
+// Reload from server when navigating back (bfcache fix)
+window.addEventListener("pageshow", function(event) {
+  if (event.persisted) window.location.reload();
+});
+
 function switchTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -586,8 +475,7 @@ async function removeBookmark(paperId, el) {
 }
 
 function toggleSelectAll(source) {
-  const checkboxes = document.querySelectorAll('.paper-checkbox');
-  checkboxes.forEach(cb => cb.checked = source.checked);
+  document.querySelectorAll('.paper-checkbox').forEach(cb => cb.checked = source.checked);
   updateBulkUI();
 }
 
@@ -595,7 +483,6 @@ function updateBulkUI() {
   const checkboxes = document.querySelectorAll('.paper-checkbox:checked');
   const btn = document.getElementById('bulk-delete-btn');
   const countSpan = document.getElementById('selected-count');
-  
   if (checkboxes.length > 0) {
     btn.style.display = 'inline-flex';
     countSpan.textContent = checkboxes.length;
@@ -606,23 +493,18 @@ function updateBulkUI() {
 
 async function executeDeletion(paperIds, elementsToRemove) {
   if (!confirm(`Are you sure you want to permanently delete ${paperIds.length} paper(s)?`)) return;
-
   const res = await fetch('/delete-papers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ paper_ids: paperIds })
   });
-  
   const data = await res.json();
-  
   if (data.success) {
     elementsToRemove.forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateX(20px)';
+      el.style.opacity = '0'; el.style.transform = 'translateX(20px)';
       el.style.transition = 'all 0.3s';
       setTimeout(() => el.remove(), 300);
     });
-    
     document.getElementById('selectAll').checked = false;
     updateBulkUI();
   } else {
@@ -630,18 +512,125 @@ async function executeDeletion(paperIds, elementsToRemove) {
   }
 }
 
-function deleteSinglePaper(id, element) {
-  executeDeletion([id], [element]);
-}
+function deleteSinglePaper(id, element) { executeDeletion([id], [element]); }
 
 function deleteSelectedPapers() {
   const checkedBoxes = document.querySelectorAll('.paper-checkbox:checked');
   const ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
   const elements = Array.from(checkedBoxes).map(cb => cb.closest('.upload-item'));
-  
   executeDeletion(ids, elements);
 }
-</script>
 
-</body>
-</html>
+async function deleteFolder(collectionId, el) {
+  if (!confirm("Delete this entire folder? All papers inside will be removed from the collection.")) return;
+  
+  const res = await fetch(`/api/collections/${collectionId}`, { method: 'DELETE' });
+  const data = await res.json();
+  
+  if (data.success) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-10px)';
+    el.style.transition = 'all 0.3s';
+    setTimeout(() => el.remove(), 300);
+  } else {
+    alert("Error deleting folder: " + data.error);
+  }
+}
+
+async function removePaperFromFolder(collectionId, paperId, el) {
+  // Reusing the toggle endpoint from paper.html
+  const res = await fetch(`/api/collections/${collectionId}/toggle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paper_id: paperId })
+  });
+  const data = await res.json();
+  
+  if (data.success) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(20px)';
+    el.style.transition = 'all 0.3s';
+    
+    setTimeout(() => {
+      const parent = el.parentElement;
+      el.remove();
+      // If that was the last paper, show the empty state
+      if (parent.children.length === 0) {
+        parent.innerHTML = '<div class="folder-empty">This folder is empty.</div>';
+      }
+    }, 300);
+  }
+}
+
+async function removeHistoryItem(type, identifier, el) {
+  const endpoint = type === 'reading' ? '/api/history/reading' : '/api/history/search';
+  const payload = type === 'reading' ? { paper_id: identifier } : { query: identifier };
+
+  const res = await fetch(endpoint, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  
+  const data = await res.json();
+  if (data.success) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(20px)';
+    el.style.transition = 'all 0.3s';
+    
+    setTimeout(() => {
+      const parent = el.parentElement;
+      el.remove();
+      // If that was the last item, show empty state
+      if (parent.children.length === 0) {
+        if (type === 'reading') {
+          document.getElementById('history-header').style.display = 'none';
+          parent.innerHTML = '<div class="empty"><h3>No reading history yet</h3><p>Start exploring papers and they\'ll appear here.<br/><a href="/">Browse trending papers →</a></p></div>';
+        } else {
+          document.getElementById('search-header').style.display = 'none';
+          parent.innerHTML = '<div class="empty"><h3>No searches yet</h3><p>Your search history builds automatically as you use Nexus.<br/><a href="/">Try searching for a topic →</a></p></div>';
+        }
+      }
+    }, 300);
+  } else {
+    alert("Error removing item: " + data.error);
+  }
+}
+
+async function clearAllHistory(type) {
+  if (!confirm(`Are you sure you want to clear your entire ${type} history? This cannot be undone.`)) return;
+
+  const endpoint = type === 'reading' ? '/api/history/reading' : '/api/history/search';
+  const payload = type === 'reading' ? { paper_id: 'all' } : { query: 'all' };
+
+  const res = await fetch(endpoint, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  
+  const data = await res.json();
+  if (data.success) {
+    const containerId = type === 'reading' ? 'reading-history-container' : 'search-history-container';
+    const headerId = type === 'reading' ? 'history-header' : 'search-header';
+    
+    document.getElementById(headerId).style.display = 'none';
+    const container = document.getElementById(containerId);
+    
+    // Fade out everything
+    container.style.opacity = '0';
+    container.style.transition = 'opacity 0.3s';
+    
+    setTimeout(() => {
+      container.style.opacity = '1';
+      if (type === 'reading') {
+        container.innerHTML = '<div class="empty"><h3>No reading history yet</h3><p>Start exploring papers and they\'ll appear here.<br/><a href="/">Browse trending papers →</a></p></div>';
+      } else {
+        container.innerHTML = '<div class="empty"><h3>No searches yet</h3><p>Your search history builds automatically as you use Nexus.<br/><a href="/">Try searching for a topic →</a></p></div>';
+      }
+    }, 300);
+  } else {
+    alert("Error clearing history: " + data.error);
+  }
+}
+{% endblock %}

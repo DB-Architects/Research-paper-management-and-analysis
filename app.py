@@ -5,6 +5,7 @@ from functools import wraps
 from sentence_transformers import SentenceTransformer
 import os
 from werkzeug.utils import secure_filename
+from flask import make_response # For cache control
 
 app = Flask(__name__)
 app.secret_key = "dblp_secret_key_change_this"
@@ -12,8 +13,8 @@ app.jinja_env.globals.update(enumerate=enumerate)
 
 DB_PARAMS = {
     "dbname": "dblp_project",
-    "user": "postgres",
-    "password": "praty",   # Your Postgres password
+    "user": "siddharthkonnur",
+    "password": "",   # Your Postgres password
     "host": "localhost",
     "port": "5432"
 }
@@ -175,15 +176,21 @@ def paper_detail(paper_id):
     authors = cur.fetchall()
 
     has_rated = False
+    is_bookmarked = False
     if "user_id" in session and session.get("role") != "admin":
         # Check if the user has already rated this specific paper
         cur.execute("SELECT 1 FROM Paper_Ratings WHERE user_id = %s AND paper_id = %s", (session["user_id"], paper_id))
         if cur.fetchone():
             has_rated = True
 
+    # Check if the user has bookmarked this paper
+        cur.execute("SELECT 1 FROM Bookmarks WHERE user_id = %s AND paper_id = %s", (session["user_id"], paper_id))
+        if cur.fetchone():
+            is_bookmarked = True
         # Log reading history
         cur.execute("INSERT INTO Reading_History (user_id, paper_id, viewed_at) VALUES (%s, %s, NOW())", 
                     (session["user_id"], paper_id))
+        
         conn.commit()
 
     cur.close(); conn.close()
@@ -192,7 +199,8 @@ def paper_detail(paper_id):
     arxiv_url   = f"https://arxiv.org/search/?query={paper['title'].replace(' ', '+')}"
 
     return render_template("paper.html", paper=paper, authors=authors,
-                           scholar_url=scholar_url, arxiv_url=arxiv_url, has_rated=has_rated)
+                           scholar_url=scholar_url, arxiv_url=arxiv_url, 
+                           has_rated=has_rated, is_bookmarked=is_bookmarked)
 
 @app.route("/for-you")
 @login_required
@@ -251,7 +259,7 @@ def for_you():
     priority = {"vector": 0, "search": 1, "popular": 2}
     sorted_recs = sorted(recommendations.values(), key=lambda x: (priority.get(x["reason_type"], 9), -float(x.get("score") or 0)))[:24]
 
-    cur.execute("SELECT COUNT(*) AS cnt FROM Reading_History WHERE user_id = %s", (user_id,))
+    cur.execute("SELECT COUNT(DISTINCT paper_id) AS cnt FROM Reading_History WHERE user_id = %s", (user_id,))
     read_count = cur.fetchone()["cnt"]
     cur.execute("SELECT COUNT(*) AS cnt FROM Bookmarks WHERE user_id = %s", (user_id,))
     bookmark_count = cur.fetchone()["cnt"]
@@ -259,9 +267,22 @@ def for_you():
     search_count = cur.fetchone()["cnt"]
 
     cur.close(); conn.close()
-    return render_template("foryou.html", recommendations=sorted_recs, top_queries=top_queries,
-                           read_count=read_count, bookmark_count=bookmark_count, search_count=search_count,
-                           has_history=bool(read_ids or top_queries))
+    # Create a response object instead of returning the template directly
+    response = make_response(render_template("foryou.html", 
+                           recommendations=sorted_recs, 
+                           top_queries=top_queries,
+                           read_count=read_count, 
+                           bookmark_count=bookmark_count, 
+                           search_count=search_count,
+                           has_history=bool(read_ids or top_queries)))
+                           
+    # Instruct the browser to never cache this page
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    
+    return response
+    
 
 
 # ── AUTH & ADMIN ───────────────────────────────────────────────────────────────
@@ -321,75 +342,6 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
-# --- ADMIN DASHBOARD ---
-@app.route("/admin")
-@admin_required
-def admin_dashboard():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT user_id, username, role, institute, trust_factor FROM Users ORDER BY user_id DESC")
-    users = cur.fetchall()
-    cur.execute("SELECT paper_id, title, publication_year FROM Papers ORDER BY uploaded_at DESC NULLS LAST LIMIT 100")
-    papers = cur.fetchall()
-    cur.close(); conn.close()
-    return render_template("admin.html", users=users, papers=papers)
-
-@app.route("/admin/search-papers")
-@admin_required
-def admin_search_papers():
-    query = request.args.get("q", "").strip()
-    conn = get_db()
-    cur = conn.cursor()
-    
-    if query:
-        # ILIKE is Postgres's case-insensitive search
-        cur.execute("""
-            SELECT paper_id, title, publication_year 
-            FROM Papers 
-            WHERE title ILIKE %s 
-            ORDER BY paper_id DESC LIMIT 50
-        """, (f"%{query}%",))
-    else:
-        # If search is empty, just return the 100 most recent
-        cur.execute("""
-            SELECT paper_id, title, publication_year 
-            FROM Papers 
-            ORDER BY uploaded_at DESC NULLS LAST LIMIT 100
-        """)
-        
-    papers = cur.fetchall()
-    cur.close(); conn.close()
-    return jsonify({"papers": papers})
-
-@app.route("/admin/delete-user/<int:del_uid>", methods=["POST"])
-@admin_required
-def admin_delete_user(del_uid):
-    conn = get_db()
-    cur = conn.cursor()
-    try:
-        cur.execute("SELECT paper_id FROM Papers WHERE uploaded_by = %s", (del_uid,))
-        user_papers = [r["paper_id"] for r in cur.fetchall()]
-        if user_papers:
-            cur.execute("DELETE FROM Paper_Ratings WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Paper_Embeddings WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Bookmarks WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Reading_History WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Paper_Authors WHERE paper_id = ANY(%s)", (user_papers,))
-            cur.execute("DELETE FROM Citations WHERE citing_paper_id = ANY(%s) OR cited_paper_id = ANY(%s)", (user_papers, user_papers))
-            cur.execute("DELETE FROM Papers WHERE paper_id = ANY(%s)", (user_papers,))
-        
-        cur.execute("DELETE FROM Paper_Ratings WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Bookmarks WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Reading_History WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Search_History WHERE user_id = %s", (del_uid,))
-        cur.execute("DELETE FROM Users WHERE user_id = %s", (del_uid,))
-        conn.commit()
-        return jsonify({"success": True})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"success": False, "error": str(e)})
-    finally:
-        cur.close(); conn.close()
 
 # ── PROFILE & PAPER MANAGEMENT ─────────────────────────────────────────────────
 
@@ -643,30 +595,12 @@ def analytics():
     """)
     papers_per_year = cur.fetchall()
 
-    # 2. Top Venues (Real-time dynamic query instead of Materialized Views)
-    cur.execute("""
-        SELECT v.venue_name, COUNT(p.paper_id) as total_papers, 
-               COALESCE(AVG(p.n_citations), 0) as avg_citations, 
-               COALESCE(SUM(p.n_citations), 0) as total_citations
-        FROM Venues v
-        JOIN Papers p ON v.venue_id = p.venue_id
-        GROUP BY v.venue_id, v.venue_name
-        ORDER BY avg_citations DESC
-        LIMIT 10
-    """)
+# 2. Query the Materialized View directly (Instantaneous!)
+    cur.execute("SELECT * FROM mv_top_venues")
     top_venues = cur.fetchall()
 
-    # 3. Top Authors (Real-time dynamic query)
-    cur.execute("""
-        SELECT a.name, COUNT(pa.paper_id) as total_papers, 
-               COALESCE(SUM(p.n_citations), 0) as total_citations
-        FROM Authors a
-        JOIN Paper_Authors pa ON a.author_id = pa.author_id
-        JOIN Papers p ON pa.paper_id = p.paper_id
-        GROUP BY a.author_id, a.name
-        ORDER BY total_citations DESC
-        LIMIT 10
-    """)
+    # 3. Query the Materialized View directly
+    cur.execute("SELECT * FROM mv_top_authors")
     top_authors = cur.fetchall()
 
     # 4. Top Papers

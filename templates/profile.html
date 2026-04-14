@@ -337,6 +337,16 @@
   ::-webkit-scrollbar-track{background:var(--navy);}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
+<script>
+    // Listen for the page show event
+    window.addEventListener("pageshow", function (event) {
+        // event.persisted is true if the page is loaded from the bfcache
+        if (event.persisted) {
+            // Force a hard reload from the server
+            window.location.reload(); 
+        }
+    });
+</script>
 </head>
 <body>
 

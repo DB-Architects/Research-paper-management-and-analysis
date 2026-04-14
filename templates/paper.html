@@ -331,8 +331,8 @@
         <a class="btn btn-outline" href="{{ arxiv_url }}" target="_blank">arXiv</a>
         
         {% if session.get('user_id') %}
-        <button class="btn btn-bookmark" id="bookmark-btn" onclick="toggleBookmark({{ paper.paper_id }})">
-          Bookmark
+        <button class="btn btn-bookmark {% if is_bookmarked %}bookmarked{% endif %}" id="bookmark-btn" onclick="toggleBookmark({{ paper.paper_id }})">
+          {% if is_bookmarked %}Bookmarked{% else %}Bookmark{% endif %}
         </button>
         {% endif %}
       </div>

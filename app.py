@@ -436,54 +436,81 @@ def for_you():
 
 # ── AUTH & ADMIN ───────────────────────────────────────────────────────────────
 
+# Make sure BOTH of these are imported at the top of app.py!
+from werkzeug.security import generate_password_hash, check_password_hash
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        data = request.get_json()
+        # Handle both JSON (from fetch) and Form Data just in case
+        data = request.get_json(silent=True) or request.form
         username = data.get("username", "").strip()
         password = data.get("password", "")
 
+        # 1. Check Hardcoded Admin
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["user_id"] = 0  
             session["username"] = "admin"
             session["role"] = "admin"
             return jsonify({"success": True}) 
 
+        # 2. Fetch User from DB (ONLY by username)
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Users WHERE username = %s AND password_hash = %s", (username, password))
+        cur.execute("SELECT * FROM Users WHERE username = %s", (username,))
         user = cur.fetchone()
-        cur.close(); conn.close()
+        cur.close()
+        conn.close()
 
-        if user:
+        # 3. Securely check the hashed password
+        if user and check_password_hash(user["password_hash"], password):
             session["user_id"] = user["user_id"]
             session["username"] = user["username"]
             session["role"] = user.get("role", "user")
             return jsonify({"success": True})
 
+        # If user doesn't exist OR password doesn't match the hash:
         return jsonify({"success": False, "error": "Invalid credentials"})
+        
     return render_template("login.html")
 
+from werkzeug.security import generate_password_hash # Make sure you have this import at the top
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
         data = request.get_json()
         role = "user"
-
+        
+        # safely extract the username
+        username = data.get("username", "")
+        
+        # FIX 1 & 2: Check for spaces and return a consistent JSON response
+        if " " in username:
+            return jsonify({"success": False, "error": "Username cannot contain spaces. Use underscores or hyphens instead."})
+            
         conn = get_db()
         cur = conn.cursor()
         try:
+            # FIX 3: Hash the password securely before inserting it into the database
+            hashed_pw = generate_password_hash(data.get("password"))
+            
             cur.execute("""
                 INSERT INTO Users (username, password_hash, gender, age, institute, role, trust_factor)
                 VALUES (%s, %s, %s, %s, %s, %s, 5.0)
-            """, (data["username"], data["password"], data.get("gender"), data.get("age"), data.get("institute"), role))
+            """, (username, hashed_pw, data.get("gender"), data.get("age"), data.get("institute"), role))
+            
             conn.commit()
             return jsonify({"success": True})
+            
         except psycopg2.IntegrityError:
+            conn.rollback() # Always rollback on error before returning
             return jsonify({"success": False, "error": "Username already taken"})
         finally:
-            cur.close(); conn.close()
+            cur.close()
+            conn.close()
+            
+    # GET request just serves the page
     return render_template("signup.html")
 
 @app.route("/logout")
@@ -1313,6 +1340,38 @@ def delete_my_account():
         return jsonify({"success": False, "error": str(e)})
     finally:
         cur.close(); conn.close()
+
+@app.route("/admin/update-trust/<int:uid>", methods=["POST"])
+@admin_required
+def admin_update_trust(uid):
+    """UPDATE: Allows admin to manually adjust a user's Trust Factor (1-10)."""
+    data = request.get_json()
+    new_tf = data.get("trust_factor")
+    
+    if new_tf is None:
+        return jsonify({"success": False, "error": "Missing trust factor."})
+        
+    try:
+        # FIX: Parse as float first to handle values like "5.00"
+        new_tf = float(new_tf)
+        
+        if new_tf < 1 or new_tf > 10:
+            return jsonify({"success": False, "error": "Trust factor must be between 1 and 10."})
+    except ValueError:
+        return jsonify({"success": False, "error": "Invalid trust factor value."})
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE Users SET trust_factor = %s WHERE user_id = %s", (new_tf, uid))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
         
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

@@ -222,9 +222,25 @@ def paper_detail(paper_id):
         note_row = cur.fetchone()
         if note_row: user_note = note_row["note_text"]
 
-        cur.execute("INSERT INTO Reading_History (user_id, paper_id, viewed_at) VALUES (%s, %s, NOW())", 
-                    (session["user_id"], paper_id))
-        conn.commit()
+        is_uploader = (paper.get("uploaded_by") == session["user_id"])
+        
+        if not is_uploader:
+            # 2. Time-gating: Only log a view if they haven't viewed it in the last 1 hour
+            cur.execute("""
+                SELECT 1 FROM Reading_History 
+                WHERE user_id = %s AND paper_id = %s 
+                AND viewed_at >= NOW() - INTERVAL '1 hour'
+            """, (session["user_id"], paper_id))
+            
+            if not cur.fetchone():
+                try:
+                    cur.execute("INSERT INTO Reading_History (user_id, paper_id, viewed_at) VALUES (%s, %s, NOW())", 
+                                (session["user_id"], paper_id))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+    cur.execute("SELECT COUNT(*) AS total_views FROM Reading_History WHERE paper_id = %s", (paper_id,))
+    total_views = cur.fetchone()["total_views"]
 
 # --- ADVANCED DBMS: Recursive CTE + Window Functions ---
     # Finds papers citing this paper, partitioned to show:
@@ -271,20 +287,21 @@ def paper_detail(paper_id):
 
     # --- ADVANCED DBMS + ML: Vector Similarity Search ---
     # Find top 5 mathematically similar papers using pgvector's Cosine Distance (<=>)
+    # --- ADVANCED DBMS + ML: Vector Similarity Search ---
     cur.execute("""
         WITH SemanticCandidates AS (
             SELECT p.paper_id, p.title, p.publication_year, v.venue_name, p.n_citations,
                    (1 - (pe.embedding <=> target.embedding))::numeric AS similarity_score
             FROM Papers p
             JOIN Paper_Embeddings pe ON p.paper_id = pe.paper_id
-            JOIN Venues v ON p.venue_id = v.venue_id
+            LEFT JOIN Venues v ON p.venue_id = v.venue_id
             CROSS JOIN (SELECT embedding FROM Paper_Embeddings WHERE paper_id = %s) AS target
             WHERE p.paper_id != %s AND target.embedding IS NOT NULL
             ORDER BY pe.embedding <=> target.embedding
             LIMIT 50
         )
         SELECT paper_id, title, publication_year, venue_name, n_citations, similarity_score,
-               -- Custom Ranking Algorithm: 70% Semantic Match + 30% Citation Weight (capped at 1000 cites to prevent domination)
+               -- Custom Ranking Algorithm: 70 percent Semantic Match + 30 percent Citation Weight
                ROUND((similarity_score * 0.7) + (LEAST(n_citations, 1000) / 1000.0 * 0.3), 3) AS hybrid_score
         FROM SemanticCandidates
         ORDER BY hybrid_score DESC
@@ -293,6 +310,8 @@ def paper_detail(paper_id):
     
     similar_papers = cur.fetchall()
 
+    cur.execute("SELECT COUNT(*) AS total_views FROM Reading_History WHERE paper_id = %s", (paper_id,))
+    total_views = cur.fetchone()["total_views"]
 
     cur.close(); conn.close()
 
@@ -303,7 +322,7 @@ def paper_detail(paper_id):
                            scholar_url=scholar_url, arxiv_url=arxiv_url, 
                            has_rated=has_rated, is_bookmarked=is_bookmarked,
                            user_note=user_note, citation_tree=citation_tree,
-                           similar_papers=similar_papers)
+                           similar_papers=similar_papers, total_views=total_views)
 
 @app.route("/for-you")
 @login_required
@@ -472,63 +491,143 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
-# --- ADMIN DASHBOARD ---
+# --- ADMIN DASHBOARD & DATA GOVERNANCE ---
+
+
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
     conn = get_db()
     cur = conn.cursor()
     
-    # 1. Users and Papers for moderation
+    # 1. Users and Papers for standard moderation
     cur.execute("SELECT user_id, username, role, institute, trust_factor FROM Users ORDER BY user_id DESC")
     users = cur.fetchall()
     
     cur.execute("SELECT paper_id, title, publication_year FROM Papers ORDER BY uploaded_at DESC NULLS LAST LIMIT 100")
     papers = cur.fetchall()
 
-    # 2. System Health Stats
-    cur.execute("SELECT COUNT(*) as cnt FROM Papers")
-    total_papers = cur.fetchone()["cnt"]
-
-    cur.execute("SELECT COUNT(DISTINCT user_id) as cnt FROM Users")
-    total_users = cur.fetchone()["cnt"]
-
-    cur.execute("SELECT COUNT(DISTINCT user_id) as cnt FROM Reading_History WHERE viewed_at >= NOW() - INTERVAL '7 days'")
-    active_users_7d = cur.fetchone()["cnt"]
-
-    # 3. NEW: User Engagement Metrics
-    cur.execute("SELECT COUNT(*) as cnt FROM Search_History")
+    # 2. READ: Global Business Intelligence Totals
+    cur.execute("SELECT COUNT(*) AS cnt FROM Reading_History")
+    total_views = cur.fetchone()["cnt"]
+    
+    cur.execute("SELECT COUNT(*) AS cnt FROM Search_History")
     total_searches = cur.fetchone()["cnt"]
 
-    cur.execute("SELECT COUNT(*) as cnt FROM Bookmarks")
-    total_bookmarks = cur.fetchone()["cnt"]
-    
-    cur.execute("SELECT COUNT(*) as cnt FROM Reading_History")
-    total_reads = cur.fetchone()["cnt"]
-
-    # 4. Read Analytics (Most Viewed Papers)
+    # 3. READ: Top Searched Trends
     cur.execute("""
-        SELECT p.paper_id, p.title, COUNT(rh.log_id) as view_count
-        FROM Reading_History rh
-        JOIN Papers p ON rh.paper_id = p.paper_id
-        GROUP BY p.paper_id, p.title
-        ORDER BY view_count DESC
-        LIMIT 10
+        SELECT query, COUNT(*) as search_count
+        FROM Search_History
+        GROUP BY query
+        ORDER BY search_count DESC
+        LIMIT 20
     """)
-    top_viewed_papers = cur.fetchall()
+    top_searches = cur.fetchall()
+
+    # 4. READ: Deep Engagement (Papers with the most substantial notes)
+    cur.execute("""
+        SELECT p.paper_id, p.title, COUNT(pn.user_id) as note_count
+        FROM Paper_Notes pn
+        JOIN Papers p ON pn.paper_id = p.paper_id
+        WHERE LENGTH(pn.note_text) > 15
+        GROUP BY p.paper_id, p.title
+        ORDER BY note_count DESC
+        LIMIT 20
+    """)
+    top_annotated = cur.fetchall()
 
     cur.close(); conn.close()
     
     return render_template("admin.html", 
                            users=users, 
                            papers=papers,
-                           total_papers=total_papers,
-                           total_users=total_users,
-                           active_users_7d=active_users_7d,
+                           total_views=total_views,
                            total_searches=total_searches,
-                           total_bookmarks=total_bookmarks,
-                           total_reads=total_reads,
-                           top_viewed_papers=top_viewed_papers)
+                           top_searches=top_searches,
+                           top_annotated=top_annotated)
+
+# --- ADMIN HELPER ENDPOINTS ---
+
+@app.route("/admin/delete-user/<int:del_uid>", methods=["DELETE"])
+@admin_required
+def admin_delete_user(del_uid):
+    """DELETE: Completely wipe a user and their uploaded papers."""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT paper_id FROM Papers WHERE uploaded_by = %s", (del_uid,))
+        user_papers = [r["paper_id"] for r in cur.fetchall()]
+        
+        if user_papers:
+            cur.execute("DELETE FROM Paper_Ratings WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Embeddings WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Bookmarks WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Reading_History WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Collection_Papers WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Notes WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Paper_Authors WHERE paper_id = ANY(%s)", (user_papers,))
+            cur.execute("DELETE FROM Citations WHERE citing_paper_id = ANY(%s) OR cited_paper_id = ANY(%s)", (user_papers, user_papers))
+            cur.execute("DELETE FROM Papers WHERE paper_id = ANY(%s)", (user_papers,))
+        
+        cur.execute("DELETE FROM Paper_Ratings WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Bookmarks WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Reading_History WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Search_History WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Paper_Notes WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Collections WHERE user_id = %s", (del_uid,))
+        cur.execute("DELETE FROM Users WHERE user_id = %s", (del_uid,))
+        
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
+
+@app.route("/admin/delete-paper/<int:pid>", methods=["DELETE"])
+@admin_required
+def admin_delete_paper(pid):
+    """DELETE: Specifically for admins to remove rule-breaking papers."""
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM Paper_Ratings WHERE paper_id = %s", (pid,))
+        cur.execute("DELETE FROM Paper_Embeddings WHERE paper_id = %s", (pid,))
+        cur.execute("DELETE FROM Bookmarks WHERE paper_id = %s", (pid,))
+        cur.execute("DELETE FROM Reading_History WHERE paper_id = %s", (pid,))
+        cur.execute("DELETE FROM Collection_Papers WHERE paper_id = %s", (pid,))
+        cur.execute("DELETE FROM Paper_Notes WHERE paper_id = %s", (pid,))
+        cur.execute("DELETE FROM Paper_Authors WHERE paper_id = %s", (pid,))
+        cur.execute("DELETE FROM Citations WHERE citing_paper_id = %s OR cited_paper_id = %s", (pid, pid))
+        cur.execute("DELETE FROM Papers WHERE paper_id = %s", (pid,))
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close(); conn.close()
+
+@app.route("/admin/search-papers")
+@admin_required
+def admin_search_papers():
+    """READ: Async endpoint for the Live Search bar."""
+    query = request.args.get("q", "").strip()
+    conn = get_db()
+    cur = conn.cursor()
+    
+    if query:
+        cur.execute("""
+            SELECT paper_id, title, publication_year 
+            FROM Papers WHERE title ILIKE %s ORDER BY paper_id DESC LIMIT 50
+        """, (f"%{query}%",))
+    else:
+        cur.execute("SELECT paper_id, title, publication_year FROM Papers ORDER BY uploaded_at DESC NULLS LAST LIMIT 100")
+        
+    papers = cur.fetchall()
+    cur.close(); conn.close()
+    return jsonify({"papers": papers})
 # ── PROFILE & PAPER MANAGEMENT ─────────────────────────────────────────────────
 
 @app.route("/profile")
@@ -595,6 +694,8 @@ def profile():
         ORDER BY pn.last_updated DESC
     """, (session["user_id"],))
     my_notes = cur.fetchall()
+
+    
 
     cur.close(); conn.close()
 
@@ -812,64 +913,81 @@ def analytics():
     conn = get_db()
     cur = conn.cursor()
 
-    # 1. Papers per year
+    # 1. Global Views (For the Hero Banner)
+    cur.execute("SELECT COUNT(*) FROM Reading_History")
+    view_row = cur.fetchone()
+    total_views = view_row[0] if isinstance(view_row, tuple) else view_row["count"]
+
+    # 2. READ: Most Popular Venues (With Type)
     cur.execute("""
-        SELECT publication_year AS year, COUNT(*) AS count
-        FROM Papers
-        GROUP BY publication_year
-        ORDER BY publication_year
+        SELECT v.venue_name, v.venue_type, COUNT(p.paper_id) as paper_count
+        FROM Papers p JOIN Venues v ON p.venue_id = v.venue_id
+        GROUP BY v.venue_name, v.venue_type 
+        ORDER BY paper_count DESC LIMIT 10
     """)
-    papers_per_year = cur.fetchall()
+    top_venues = []
+    for r in cur.fetchall():
+        name = r[0] if isinstance(r, tuple) else r["venue_name"]
+        vtype = r[1] if isinstance(r, tuple) else r["venue_type"]
+        count = r[2] if isinstance(r, tuple) else r["paper_count"]
+        
+        # Format the type nicely
+        if vtype in ('C', 'Conference', 'conference'):
+            type_label = "Conference"
+        elif vtype in ('J', 'Journal', 'journal'):
+            type_label = "Journal"
+        else:
+            type_label = "Unknown Type"
+            
+        top_venues.append({"name": name, "type": type_label, "count": count})
 
-# 2. Query the Materialized View directly (Instantaneous!)
-    cur.execute("SELECT * FROM mv_top_venues")
-    top_venues = cur.fetchall()
-
-    # 3. Query the Materialized View directly
-    cur.execute("SELECT * FROM mv_top_authors")
-    top_authors = cur.fetchall()
-
-    # 4. Top Papers
+    # 3. READ: Most Cited Authors
     cur.execute("""
-        SELECT p.paper_id, p.title, p.publication_year, p.n_citations, v.venue_name
+        SELECT a.name, SUM(p.n_citations) as total_cites
+        FROM Authors a
+        JOIN Paper_Authors pa ON a.author_id = pa.author_id
+        JOIN Papers p ON pa.paper_id = p.paper_id
+        GROUP BY a.name ORDER BY total_cites DESC NULLS LAST LIMIT 10
+    """)
+    top_cited_authors = [{"name": r[0] if isinstance(r, tuple) else r["name"], 
+                          "count": int(r[1] if isinstance(r, tuple) else r["total_cites"] or 0)} for r in cur.fetchall()]
+
+    # 4. READ: Most Viewed Authors
+    cur.execute("""
+        SELECT a.name, COUNT(rh.user_id) as view_count
+        FROM Authors a
+        JOIN Paper_Authors pa ON a.author_id = pa.author_id
+        JOIN Reading_History rh ON pa.paper_id = rh.paper_id
+        GROUP BY a.name ORDER BY view_count DESC LIMIT 10
+    """)
+    top_viewed_authors = [{"name": r[0] if isinstance(r, tuple) else r["name"], 
+                           "count": int(r[1] if isinstance(r, tuple) else r["view_count"])} for r in cur.fetchall()]
+
+    # 5. READ: Top 10 Most Viewed Papers (Leaderboard)
+    cur.execute("""
+        SELECT p.paper_id, p.title, p.publication_year, v.venue_name, 
+               COUNT(rh.user_id) AS view_count
         FROM Papers p
         LEFT JOIN Venues v ON p.venue_id = v.venue_id
-        ORDER BY p.n_citations DESC NULLS LAST
-        LIMIT 10
+        JOIN Reading_History rh ON p.paper_id = rh.paper_id
+        GROUP BY p.paper_id, p.title, p.publication_year, v.venue_name
+        ORDER BY view_count DESC LIMIT 10
     """)
-    top_papers = cur.fetchall()
+    top_viewed_papers = [{"paper_id": r[0] if isinstance(r, tuple) else r["paper_id"], 
+                          "title": r[1] if isinstance(r, tuple) else r["title"], 
+                          "publication_year": r[2] if isinstance(r, tuple) else r["publication_year"], 
+                          "venue_name": r[3] if isinstance(r, tuple) else r["venue_name"], 
+                          "view_count": r[4] if isinstance(r, tuple) else r["view_count"]} for r in cur.fetchall()]
 
-    # Global Counts
-    cur.execute("SELECT COUNT(*) AS cnt FROM Papers")
-    total_papers = cur.fetchone()["cnt"]
-
-    cur.execute("SELECT COUNT(*) AS cnt FROM Authors")
-    total_authors = cur.fetchone()["cnt"]
-
-    cur.execute("SELECT COUNT(*) AS cnt FROM Citations")
-    total_citations = cur.fetchone()["cnt"]
-
-    cur.execute("SELECT COUNT(*) AS cnt FROM Venues")
-    total_venues = cur.fetchone()["cnt"]
-
-    cur.execute("SELECT COUNT(*) AS cnt FROM Users")
-    total_users = cur.fetchone()["cnt"]
-
-    cur.close()
-    conn.close()
+    cur.close(); conn.close()
 
     return render_template("analytics.html",
-        papers_per_year=papers_per_year,
+        total_views=total_views,
         top_venues=top_venues,
-        top_authors=top_authors,
-        top_papers=top_papers,
-        total_papers=f"{total_papers:,}",
-        total_authors=f"{total_authors:,}",
-        total_citations=f"{total_citations:,}",
-        total_venues=f"{total_venues:,}",
-        total_users=f"{total_users:,}",
+        top_cited_authors=top_cited_authors,
+        top_viewed_authors=top_viewed_authors,
+        top_viewed_papers=top_viewed_papers
     )
-
 # author part
 @app.route("/search_authors")
 def search_authors():

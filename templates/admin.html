@@ -6,224 +6,175 @@
 <title>Admin Dashboard — Research Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com//libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+  /* --- GLOBAL VARIABLES & BASE CSS --- */
   :root {
-    --navy:    #0a0f1e; --navy3:   #111e38; --card:    #0f1c35; --border:  #1a2d50;
-    --teal:    #00d4b4; --teal2:   #00b89a; --teal-dim:#00d4b420;
-    --amber:   #f59e0b; --amber-dim:#f59e0b18;
-    --text:    #e8eef8; --muted:   #6b82a8; --error:   #ff6b6b;
+    --navy: #0a0f1e; --navy2: #0d1528; --navy3: #111e38;
+    --card: #0f1c35; --border: #1a2d50;
+    --teal: #00d4b4; --teal2: #00b89a; --teal-dim: #00d4b420;
+    --teal-glow: 0 0 40px #00d4b430;
+    --amber: #f59e0b; --amber-dim: #f59e0b18;
+    --text: #e8eef8; --muted: #6b82a8; --muted2: #3d5278;
+    --error: #ff6b6b;
   }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   body { background: var(--navy); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
-  nav {
-    position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 24px;
-    padding: 0 40px; height: 64px; background: #0a0f1eee; border-bottom: 1px solid var(--border);
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px; opacity: 0.15; pointer-events: none; z-index: 0;
   }
-  .nav-logo { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--text); text-decoration: none; }
+
+  /* --- NAVBAR CSS --- */
+  nav {
+    position: sticky; top: 0; z-index: 1000;
+    display: flex; align-items: center; gap: 24px;
+    padding: 0 40px; height: 64px;
+    background: #0a0f1eee; backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--teal); text-decoration: none; white-space: nowrap; }
+  .nav-logo span { color: var(--text); }
+  .nav-search { flex: 1; max-width: 560px; display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+  .nav-search:focus-within { border-color: var(--teal); box-shadow: var(--teal-glow); }
+  .nav-search select { background: transparent; border: none; color: var(--teal); font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer; padding-left: 14px; }
+  .nav-search select option { background: var(--card); }
+  .nav-search input { flex: 1; background: none; border: none; outline: none; padding: 10px 0; padding-left: 10px; border-left: 1px solid var(--border); font-size: 0.92rem; color: var(--text); font-family: 'Inter', sans-serif; }
+  .nav-search input::placeholder { color: var(--muted2); }
+  .nav-search button { background: var(--teal); border: none; padding: 0 20px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.82rem; color: var(--navy); transition: background 0.2s; }
+  .nav-search button:hover { background: var(--teal2); }
   .nav-links { margin-left: auto; display: flex; gap: 24px; align-items: center; }
-  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.88rem; font-weight: 500; transition: color 0.2s; }
   .nav-links a:hover { color: var(--text); }
+  .nav-active { color: var(--teal) !important; }
+  .nav-btn { background: var(--teal); color: var(--navy) !important; padding: 7px 16px; border-radius: 8px; font-weight: 600 !important; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--navy); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* --- ADMIN SPECIFIC CSS --- */
+  /* BULLETPROOF CONTAINMENT */
+  .page { 
+    width: 100%; max-width: 1100px; margin: 40px auto; 
+    padding: 0 24px; position: relative; z-index: 1; 
+  }
   
-  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
-  .header { margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+  .header { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
   .header h1 { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 2rem; color: var(--teal); }
   
-  /* --- TABS --- */
-  .tabs {
-    display: flex; gap: 4px; background: var(--navy3);
-    border-radius: 12px; padding: 4px; margin-bottom: 24px;
-  }
-  .tab {
-    flex: 1; padding: 12px; border-radius: 9px; border: none; background: none;
-    font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
-    color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center;
-  }
-  .tab.active { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-  .tab-content { display: none; animation: fadeIn 0.3s ease; }
-  .tab-content.active { display: block; }
+  .stats-banner { display: flex; gap: 24px; margin-bottom: 30px; }
+  .stat-box { flex: 1; background: var(--navy3); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+  .stat-icon { width: 48px; height: 48px; background: var(--teal-dim); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--teal); font-size: 1.5rem; }
+  .stat-info h3 { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+  .stat-info .num { font-size: 1.8rem; font-weight: 800; color: var(--text); font-family: 'Inter', sans-serif; }
 
-  /* --- STAT CARDS (System Health) --- */
-  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-  .stat-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 20px;
-    border-top: 3px solid var(--teal);
-  }
-  .stat-card-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
-  .stat-card-num { font-size: 1.8rem; font-weight: 800; color: var(--text); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } .stats-banner { flex-direction: column; } }
   
-  /* Progress Bar */
-  .progress-wrap { background: var(--navy); border: 1px solid var(--border); border-radius: 100px; height: 12px; width: 100%; overflow: hidden; margin-top: 12px; }
-  .progress-fill { background: linear-gradient(90deg, var(--teal), var(--teal2)); height: 100%; border-radius: 100px; }
-
-  /* --- LISTS & CARDS --- */
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; margin-bottom: 24px;}
-  .card h2 { font-size: 1.2rem; margin-bottom: 16px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center;}
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; height: 500px;}
+  .card h2 { font-size: 1.1rem; margin-bottom: 16px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px;}
   
   .search-bar { width: 100%; background: var(--navy); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: 'Inter', sans-serif; margin-bottom: 16px; outline: none; }
   .search-bar:focus { border-color: var(--teal); }
 
-  .list-container { overflow-y: auto; max-height: 500px; padding-right: 10px; }
-  .list-container::-webkit-scrollbar { width: 6px; }
-  .list-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .list-container { overflow-y: auto; flex: 1; padding-right: 10px; }
+  .list-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
   .list-item:last-child { border-bottom: none; }
   .item-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
   .item-meta { font-size: 0.8rem; color: var(--muted); }
   
-  .del-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; transition: all 0.2s; }
+  .del-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.8rem; transition: all 0.2s; white-space: nowrap; }
   .del-btn:hover { border-color: var(--error); color: var(--error); }
   
   .role-badge { background: var(--navy3); border: 1px solid var(--border); border-radius: 100px; padding: 2px 8px; font-size: 0.7rem; color: var(--teal); }
-  .tf-badge { background: var(--amber-dim); border: 1px solid #f59e0b40; border-radius: 100px; padding: 2px 8px; font-size: 0.7rem; color: var(--amber); font-weight: 700; }
-
-  /* --- TABLE --- */
-  .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  .data-table th { text-align: left; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--muted); padding: 0 0 14px; border-bottom: 1px solid var(--border); }
-  .data-table td { padding: 13px 0; border-bottom: 1px solid var(--border); color: var(--text); }
-  .data-table tr:hover td { color: var(--teal); }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .rank-badge { background: var(--amber-dim); color: var(--amber); border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; font-weight: 700; }
 </style>
 </head>
 <body>
 
 <nav>
   <a class="nav-logo" href="/">Research Portal</a>
+  <form class="nav-search" action="/search" method="GET" id="globalNavSearchForm">
+    <select id="globalSearchType" onchange="updateGlobalSearch()">
+      <option value="papers">Papers</option>
+      <option value="authors">Authors</option>
+    </select>
+    <input name="q" type="text" value="{{ query if query is defined else '' }}" placeholder="Search database..." autocomplete="off"/>
+    <button type="submit">Go</button>
+  </form>
   <div class="nav-links">
-    <a href="/">Back to Home</a> <a href="/logout">Logout</a>
+    {% if session.get('role') == 'admin' %}
+      <a href="/admin" class="nav-active">Admin</a>
+    {% endif %}
+    <a href="/analytics">Analytics</a>
+    {% if session.get('username') %}
+      <a href="/for-you">For You</a>
+      <a href="/profile">{{ session.username }}</a>
+      <a href="/logout">Logout</a>
+    {% else %}
+      <a href="/login">Login</a>
+      <a href="/signup" class="nav-btn">Sign Up</a>
+    {% endif %}
   </div>
 </nav>
 
 <div class="page">
   <div class="header">
-    <h1>Command Center</h1>
-    <p style="color: var(--muted); font-size: 0.9rem;">Manage platform users, monitor ML health, and track view analytics.</p>
+    <h1>Platform Administration</h1>
+    <p style="color: var(--muted); font-size: 0.9rem;">Monitor database engagement and moderate platform content.</p>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('health', this)">System Health</button>
-    <button class="tab" onclick="switchTab('analytics', this)">View Analytics</button>
-    <button class="tab" onclick="switchTab('users', this)">User Management</button>
-    <button class="tab" onclick="switchTab('papers', this)">Content Moderation</button>
-  </div>
-
-  <div id="tab-health" class="tab-content active">
-    
-    <div class="card" style="margin-bottom: 24px;">
-      <h2>Platform Overview</h2>
-      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 20px;">High-level metrics of user base and database volume.</p>
-      <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="stat-card">
-          <div class="stat-card-label">Registered Users</div>
-          <div class="stat-card-num">{{ total_users }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-card-label">Active Users (7 Days)</div>
-          <div class="stat-card-num" style="color: var(--teal);">{{ active_users_7d }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-card-label">Total Papers in DB</div>
-          <div class="stat-card-num">{{ total_papers }}</div>
-        </div>
+  <div class="stats-banner">
+    <div class="stat-box">
+      <div class="stat-icon">👁️</div>
+      <div class="stat-info">
+        <h3>Total Platform Views</h3>
+        <div class="num">{{ "{:,}".format(total_views) }}</div>
       </div>
     </div>
-
-    <div class="card">
-      <h2>User Engagement Tracking</h2>
-      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 20px;">Real-time tracking of how users are interacting with the research database.</p>
-      <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
-        <div class="stat-card" style="border-top-color: var(--amber);">
-          <div class="stat-card-label">Total Searches Executed</div>
-          <div class="stat-card-num">{{ total_searches }}</div>
-        </div>
-        <div class="stat-card" style="border-top-color: #a78bfa;">
-          <div class="stat-card-label">Total Papers Read</div>
-          <div class="stat-card-num">{{ total_reads }}</div>
-        </div>
-        <div class="stat-card" style="border-top-color: #3b82f6;">
-          <div class="stat-card-label">Total Bookmarks Saved</div>
-          <div class="stat-card-num">{{ total_bookmarks }}</div>
-        </div>
+    <div class="stat-box">
+      <div class="stat-icon">🔍</div>
+      <div class="stat-info">
+        <h3>Total Queries Searched</h3>
+        <div class="num">{{ "{:,}".format(total_searches) }}</div>
       </div>
-    </div>
-    
-  </div>
-
-  <div id="tab-analytics" class="tab-content">
-    <div class="card">
-      <h2>Most Read Papers</h2>
-      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 24px;">Based on aggregated user reading history across the entire platform.</p>
-      
-      <div style="width: 100%; height: 300px; margin-bottom: 30px;">
-        <canvas id="viewsChart"></canvas>
-      </div>
-
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width: 50px;">Rank</th>
-            <th>Paper Title</th>
-            <th style="text-align:right">Total Views</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for i, paper in enumerate(top_viewed_papers) %}
-          <tr>
-            <td style="color: var(--muted2); font-weight: 700;">#{{ i+1 }}</td>
-            <td><a href="/paper/{{ paper.paper_id }}" style="color: inherit; text-decoration: none;">{{ paper.title }}</a></td>
-            <td style="text-align:right; font-weight: 700; color: var(--teal);">{{ paper.view_count }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% if not top_viewed_papers %}
-        <div style="text-align: center; padding: 30px; color: var(--muted); font-size: 0.9rem;">No reading history recorded yet.</div>
-      {% endif %}
     </div>
   </div>
 
-  <div id="tab-users" class="tab-content">
+  <div class="grid">
     <div class="card">
       <h2>Registered Users</h2>
       <div class="list-container" id="user-list">
         {% for u in users %}
         <div class="list-item" id="user-{{ u.user_id }}">
           <div>
-            <div class="item-title">
-              {{ u.username }} 
-              <span class="role-badge">{{ u.role }}</span>
-              <span class="tf-badge" style="border-color: {% if u.trust_factor < 4.0 %}var(--error){% else %}#f59e0b40{% endif %}; color: {% if u.trust_factor < 4.0 %}var(--error){% else %}var(--amber){% endif %};">
-                TF: {{ u.trust_factor }}/10
-              </span>
-            </div>
-            <div class="item-meta">{{ u.institute or 'No Institute' }}</div>
+            <div class="item-title">{{ u.username }} <span class="role-badge">{{ u.role }}</span></div>
+            <div class="item-meta">TF: {{ u.trust_factor }}/10 | {{ u.institute or 'No Institute' }}</div>
           </div>
           {% if u.user_id != session.user_id %}
           <button class="del-btn" onclick="deleteUser({{ u.user_id }})">Ban User</button>
           {% else %}
-          <span style="font-size: 0.8rem; color: var(--muted);">You</span>
+          <span style="font-size: 0.8rem; color: var(--teal);">You</span>
           {% endif %}
         </div>
         {% endfor %}
       </div>
     </div>
-  </div>
 
-  <div id="tab-papers" class="tab-content">
     <div class="card">
       <h2>
-        Database Papers
-        <span style="font-size: 0.8rem; color: var(--muted); font-weight: 400;" id="paper-count">Showing latest 100</span>
+        Paper Moderation
+        <span style="font-size: 0.75rem; color: var(--muted); font-weight: 400;" id="paper-count">Latest 100</span>
       </h2>
-      <input type="text" id="paper-search" class="search-bar" placeholder="Search papers by title to delete..." onkeyup="searchAdminPapers()">
+      <input type="text" id="paper-search" class="search-bar" placeholder="Search papers by title..." onkeyup="searchAdminPapers()">
       <div class="list-container" id="paper-list">
         {% for p in papers %}
         <div class="list-item" id="paper-{{ p.paper_id }}">
           <div>
-            <div class="item-title">{{ p.title[:65] }}{% if p.title|length > 65 %}...{% endif %}</div>
+            <a href="/paper/{{ p.paper_id }}" class="item-title" style="color: var(--text); text-decoration: none;" target="_blank">{{ p.title[:50] }}...</a>
             <div class="item-meta">ID: {{ p.paper_id }} | Year: {{ p.publication_year }}</div>
           </div>
           <button class="del-btn" onclick="deletePaper({{ p.paper_id }})">Delete</button>
@@ -231,112 +182,112 @@
         {% endfor %}
       </div>
     </div>
-  </div>
 
+    <div class="card">
+      <h2>
+        Search Trends
+        <span style="font-size: 0.75rem; color: var(--teal); font-weight: 600;">Top 20</span>
+      </h2>
+      <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">Most frequently searched terms across all users.</p>
+      <div class="list-container">
+        {% if top_searches %}
+          {% for ts in top_searches %}
+          <div class="list-item" style="align-items: center;">
+            <div class="item-title" style="margin-bottom: 0;">"{{ ts.query }}"</div>
+            <div class="rank-badge">{{ ts.search_count }} searches</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="padding: 20px; text-align: center; color: var(--muted);">No search data available.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>
+        Deep Engagement
+        <span style="font-size: 0.75rem; color: var(--teal); font-weight: 600;">Top 20</span>
+      </h2>
+      <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 12px;">Papers generating the most substantial private annotations.</p>
+      <div class="list-container">
+        {% if top_annotated %}
+          {% for ta in top_annotated %}
+          <div class="list-item" style="align-items: center;">
+            <div>
+              <a href="/paper/{{ ta.paper_id }}" class="item-title" style="color: var(--text); text-decoration: none;" target="_blank">
+                {{ ta.title[:55] }}...
+              </a>
+            </div>
+            <div class="rank-badge" style="background: var(--navy3); color: var(--text); border: 1px solid var(--border);">
+              {{ ta.note_count }} notes
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="padding: 20px; text-align: center; color: var(--muted);">No annotation data available.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-// --- TAB SWITCHING LOGIC ---
-function switchTab(tabId, btn) {
-  // Remove active from all tabs and contents
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  
-  // Add active to selected
-  btn.classList.add('active');
-  document.getElementById('tab-' + tabId).classList.add('active');
-}
+  function updateGlobalSearch() {
+    const type = document.getElementById('globalSearchType').value;
+    document.getElementById('globalNavSearchForm').action = type === 'authors' ? '/search_authors' : '/search';
+  }
 
-// --- CHART.JS LOGIC FOR VIEW ANALYTICS ---
-{% if top_viewed_papers %}
-document.addEventListener("DOMContentLoaded", function() {
-  const chartLabels = {{ top_viewed_papers | map(attribute='title') | map('truncate', 30) | list | tojson }};
-  const chartData = {{ top_viewed_papers | map(attribute='view_count') | list | tojson }};
-  
-  Chart.defaults.color = '#6b82a8';
-  Chart.defaults.font.family = "'Inter', sans-serif";
-
-  new Chart(document.getElementById('viewsChart'), {
-    type: 'bar',
-    data: {
-      labels: chartLabels,
-      datasets: [{
-        label: 'Total Views',
-        data: chartData,
-        backgroundColor: 'rgba(0,212,180,0.2)',
-        borderColor: '#00d4b4',
-        borderWidth: 1.5,
-        borderRadius: 6,
-        hoverBackgroundColor: 'rgba(0,212,180,0.4)',
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-        y: { grid: { color: '#1a2d5040' }, ticks: { precision: 0 } }
-      }
-    }
-  });
-});
-{% endif %}
-
-// --- EXISTING ADMIN LOGIC ---
-async function deleteUser(id) {
-  if (!confirm('Are you sure? This will delete the user and all papers they uploaded.')) return;
-  const res = await fetch('/admin/delete-user/' + id, { method: 'POST' });
-  const data = await res.json();
-  if (data.success) {
-    document.getElementById('user-' + id).remove();
-  } else alert(data.error);
-}
-
-async function deletePaper(id) {
-  if (!confirm('Are you sure you want to permanently delete this paper?')) return;
-  const res = await fetch('/delete-papers', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ paper_ids: [id] })
-  });
-  const data = await res.json();
-  if (data.success) {
-    document.getElementById('paper-' + id).remove();
-  } else alert(data.error);
-}
-
-let searchTimeout = null;
-async function searchAdminPapers() {
-  clearTimeout(searchTimeout);
-  const query = document.getElementById('paper-search').value;
-  searchTimeout = setTimeout(async () => {
-    const res = await fetch('/admin/search-papers?q=' + encodeURIComponent(query));
+  async function deleteUser(id) {
+    if (!confirm('Are you sure? This will delete the user and all their data.')) return;
+    const res = await fetch('/admin/delete-user/' + id, { method: 'DELETE' });
     const data = await res.json();
-    const list = document.getElementById('paper-list');
-    list.innerHTML = '';
-    
-    if (data.papers.length === 0) {
-      list.innerHTML = '<div style="padding: 20px; color: var(--muted); text-align: center;">No papers found.</div>';
-      document.getElementById('paper-count').textContent = "0 results";
-      return;
-    }
+    if (data.success) {
+      document.getElementById('user-' + id).remove();
+    } else alert(data.error);
+  }
 
-    document.getElementById('paper-count').textContent = data.papers.length + (query ? " results" : " latest");
-    data.papers.forEach(p => {
-      const titleShort = p.title.length > 65 ? p.title.substring(0, 65) + '...' : p.title;
-      list.innerHTML += `
-        <div class="list-item" id="paper-${p.paper_id}">
-          <div>
-            <div class="item-title">${titleShort}</div>
-            <div class="item-meta">ID: ${p.paper_id} | Year: ${p.publication_year}</div>
+  async function deletePaper(id) {
+    if (!confirm('Permanently delete this paper from the database?')) return;
+    const res = await fetch('/admin/delete-paper/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      const pEl = document.getElementById('paper-' + id);
+      if(pEl) pEl.remove();
+    } else alert(data.error);
+  }
+
+  let searchTimeout = null;
+  async function searchAdminPapers() {
+    clearTimeout(searchTimeout);
+    const query = document.getElementById('paper-search').value;
+    
+    searchTimeout = setTimeout(async () => {
+      const res = await fetch('/admin/search-papers?q=' + encodeURIComponent(query));
+      const data = await res.json();
+      const list = document.getElementById('paper-list');
+      list.innerHTML = ''; 
+      
+      if (data.papers.length === 0) {
+        list.innerHTML = '<div style="padding: 20px; color: var(--muted); text-align: center;">No papers found.</div>';
+        document.getElementById('paper-count').textContent = "0 results";
+        return;
+      }
+
+      document.getElementById('paper-count').textContent = data.papers.length + (query ? " results" : " latest");
+      data.papers.forEach(p => {
+        const titleShort = p.title.length > 50 ? p.title.substring(0, 50) + '...' : p.title;
+        list.innerHTML += `
+          <div class="list-item" id="paper-${p.paper_id}">
+            <div>
+              <a href="/paper/${p.paper_id}" class="item-title" style="color: var(--text); text-decoration: none;" target="_blank">${titleShort}</a>
+              <div class="item-meta">ID: ${p.paper_id} | Year: ${p.publication_year}</div>
+            </div>
+            <button class="del-btn" onclick="deletePaper(${p.paper_id})">Delete</button>
           </div>
-          <button class="del-btn" onclick="deletePaper(${p.paper_id})">Delete</button>
-        </div>
-      `;
-    });
-  }, 300);
-}
+        `;
+      });
+    }, 300);
+  }
 </script>
 
 </body>

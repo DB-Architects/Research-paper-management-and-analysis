@@ -18,6 +18,7 @@
   .breadcrumb a { color: var(--teal); text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
 
+  /* ── HEADER ── */
   .paper-header {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 16px; padding: 36px; margin-bottom: 24px;
@@ -47,12 +48,11 @@
   }
   .author-tag:hover { border-color: var(--teal); color: var(--teal); }
 
+  /* ── STATS ── */
   .paper-stats {
     display: flex; gap: 24px; flex-wrap: wrap;
-    padding: 20px 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 24px;
+    padding: 20px 0; border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border); margin-bottom: 24px;
   }
   .stat-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); }
   .stat-item svg { width: 15px; height: 15px; color: var(--teal); }
@@ -62,8 +62,8 @@
     padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;
   }
 
+  /* ── ACTIONS ── */
   .paper-actions { display: flex; gap: 12px; flex-wrap: wrap; }
-
   .btn {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 10px 20px; border-radius: 10px;
@@ -76,52 +76,12 @@
   .btn-primary:hover { background: var(--teal2); }
   .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
   .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+  
   .btn-bookmark { background: transparent; border: 1px solid var(--border); color: var(--muted); }
   .btn-bookmark.bookmarked { background: var(--teal-dim); border-color: #00d4b440; color: var(--teal); }
   .btn-bookmark:hover { border-color: var(--teal); color: var(--teal); }
 
-  /* ── RATING UI ── */
-  .rating-box {
-    background: var(--navy3); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px; margin-top: 20px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .rating-select {
-    background: var(--navy); border: 1px solid var(--border); color: var(--text);
-    padding: 8px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; outline: none;
-  }
-  .rating-select:focus { border-color: var(--teal); }
-
-  /* ── ABSTRACT ── */
-  .section-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px; padding: 28px; margin-bottom: 24px;
-    animation: fadeUp 0.4s 0.1s ease both;
-  }
-  .section-label {
-    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--teal); margin-bottom: 14px;
-  }
-  .abstract-text { font-size: 0.93rem; line-height: 1.8; color: #b8c8e0; font-weight: 300; }
-
-  /* ── SIDEBAR ── */
-  .sidebar { align-self: start; }
-  .sidebar-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 22px; margin-bottom: 20px;
-    animation: fadeUp 0.4s 0.15s ease both;
-  }
-  .sidebar-title {
-    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── COLLECTION DROPDOWN ── */
+  /* ── DROPDOWN ── */
   .dropdown-wrapper { position: relative; display: inline-block; }
   .collection-menu {
     display: none; position: absolute; bottom: 110%; left: 0;
@@ -142,6 +102,47 @@
     color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; outline: none;
   }
   .coll-input-group input:focus { border-color: var(--teal); }
+
+  /* ── RATING UI ── */
+  .rating-box {
+    background: var(--navy3); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-top: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .rating-select {
+    background: var(--navy); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; outline: none;
+  }
+  .rating-select:focus { border-color: var(--teal); }
+
+  /* ── SECTIONS ── */
+  .section-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; margin-bottom: 24px;
+    animation: fadeUp 0.4s 0.1s ease both;
+  }
+  .section-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--teal); margin-bottom: 14px;
+  }
+  .abstract-text { font-size: 0.93rem; line-height: 1.8; color: #b8c8e0; font-weight: 300; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { align-self: start; position: sticky; top: 84px; }
+  .sidebar-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px; margin-bottom: 20px;
+    animation: fadeUp 0.4s 0.15s ease both;
+  }
+  .sidebar-title {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 {% endblock %}
 
 {% block content %}
@@ -163,25 +164,22 @@
 
       <div class="paper-stats">
         <div class="stat-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Published <strong>{{ paper.publication_year }}</strong>
         </div>
         <div class="stat-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77"/></svg>
           <strong>{{ paper.n_citations }}</strong> citations
+        </div>
+        
+        <div class="stat-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <strong>{{ "{:,}".format(total_views) }}</strong> views
         </div>
 
         {% if paper.uploader_name %}
         <div class="stat-item" style="margin-left: auto;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2">
-            <path d="M12 2l3 6 7 1-5 5 1 7-7-4-7 4 1-7-5-5 7-1z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M12 2l3 6 7 1-5 5 1 7-7-4-7 4 1-7-5-5 7-1z"/></svg>
           Uploaded by <strong>{{ paper.uploader_name }}</strong>
           <span class="trust-badge" id="tf-badge">{{ paper.trust_factor }}/10 TF</span>
         </div>
@@ -189,6 +187,13 @@
       </div>
 
       <div class="paper-actions">
+        {% if paper.pdf_path %}
+        <a class="btn" href="{{ paper.pdf_path }}" target="_blank" style="background:var(--navy3); border:1px solid var(--border); color:var(--text);">Read Full PDF</a>
+        {% endif %}
+        
+        <a class="btn btn-primary" href="{{ scholar_url }}" target="_blank">Google Scholar</a>
+        <a class="btn btn-outline" href="{{ arxiv_url }}" target="_blank">arXiv</a>
+
         {% if session.get('user_id') %}
         <button class="btn btn-bookmark {% if is_bookmarked %}bookmarked{% endif %}" id="bookmark-btn" onclick="toggleBookmark({{ paper.paper_id }})">
           {% if is_bookmarked %}Bookmarked{% else %}Bookmark{% endif %}
@@ -196,9 +201,7 @@
 
         <div class="dropdown-wrapper">
           <button class="btn btn-outline" onclick="toggleCollectionMenu()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
             Save to Folder
           </button>
           <div class="collection-menu" id="collection-menu">
@@ -246,8 +249,9 @@
       <div class="section-label">Abstract</div>
       <div class="abstract-text">{{ paper.abstract_text }}</div>
     </div>
+    
     {% if session.get('user_id') %}
-    <div class="section-card" style="margin-top: 24px; border-top: 3px solid var(--amber);">
+    <div class="section-card" id="private-note-section" style="margin-top: 24px; border-top: 3px solid var(--amber);">
       <div class="section-label" style="color: var(--amber); display: flex; justify-content: space-between; align-items: center;">
         <span>Private Annotations</span>
         <span id="note-status" style="font-size: 0.7rem; color: var(--muted); text-transform: none; font-weight: 400;">Saved securely to your profile</span>
@@ -272,7 +276,7 @@
         {% for sp in similar_papers %}
         <a href="/paper/{{ sp.paper_id }}" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s; display: block;" onmouseover="this.style.borderColor='var(--teal)'; this.style.transform='translateX(4px)';" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
           <div style="font-size: 0.72rem; color: var(--teal); text-transform: uppercase; margin-bottom: 6px;">
-            {{ sp.venue_name[:50] }}
+            {{ sp.venue_name[:50] if sp.venue_name else 'Unknown Venue' }}
           </div>
           <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 8px;">
             {{ sp.title }}
@@ -280,7 +284,7 @@
           <div style="display: flex; gap: 16px; font-size: 0.8rem; color: var(--muted);">
             <span>Year: {{ sp.publication_year }}</span>
             <span style="color: var(--amber); font-weight: 600;">
-              {{ (sp.similarity_score * 100)|round(1) }}% Match
+              {{ (sp.hybrid_score * 100)|round(1) }} Score
             </span>
           </div>
         </a>
@@ -317,6 +321,7 @@
 {% endblock %}
 
 {% block extra_js %}
+// --- BOOKMARK LOGIC ---
 async function toggleBookmark(paperId) {
   const btn = document.getElementById('bookmark-btn');
   const res = await fetch('/bookmark/' + paperId, { method: 'POST' });
@@ -330,6 +335,7 @@ async function toggleBookmark(paperId) {
   }
 }
 
+// --- RATING LOGIC ---
 async function submitRating(paperId) {
   const rating = document.getElementById('rating-val').value;
   if (!rating) return alert("Please select a rating.");
@@ -351,11 +357,12 @@ async function submitRating(paperId) {
     alert(data.error);
   }
 }
+
 // --- AUTO-SAVE PRIVATE NOTES ---
 const noteArea = document.getElementById('private-note');
 if (noteArea) {
   let typingTimer;
-  const doneTypingInterval = 1000; // Wait 1 second after user stops typing to save
+  const doneTypingInterval = 1000;
 
   noteArea.addEventListener('input', () => {
     clearTimeout(typingTimer);
@@ -389,7 +396,6 @@ async function toggleCollectionMenu() {
   menu.classList.toggle('show');
   
   if (menu.classList.contains('show')) {
-    // Fetch collections when opened
     const res = await fetch('/api/collections');
     const data = await res.json();
     const listDiv = document.getElementById('coll-list');
@@ -423,7 +429,6 @@ async function createNewCollection() {
   const data = await res.json();
   if (data.success) {
     nameInput.value = '';
-    // Re-fetch list to show the new folder
     toggleCollectionMenu(); 
     setTimeout(toggleCollectionMenu, 50); 
   }
@@ -451,7 +456,8 @@ async function togglePaperInCollection(collectionId, el) {
 document.addEventListener('click', function(event) {
   const wrapper = document.querySelector('.dropdown-wrapper');
   if (wrapper && !wrapper.contains(event.target)) {
-    document.getElementById('collection-menu').classList.remove('show');
+    const menu = document.getElementById('collection-menu');
+    if (menu) menu.classList.remove('show');
   }
 });
 {% endblock %}
